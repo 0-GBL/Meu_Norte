@@ -27,10 +27,10 @@ export default function ProfilePage() {
     <h1>Meu Perfil</h1>
     <section className="panel detail-panel">
       <h2>{user.name}</h2>
-      <p>{user.email} · {user.role === 'admin' ? 'Administrador' : 'Usuário'}</p>
+      <p>{user.email}</p>
     </section>
-    <section className="panel detail-panel">
-      <h2>Alterar senha</h2>
+    <details className="panel detail-panel" open={user.mustChangePassword || undefined}>
+      <summary>Alterar senha</summary>
       {user.mustChangePassword && <p>Troque a senha inicial para acessar o espaço financeiro.</p>}
       <p>Use pelo menos 12 caracteres e até 72 bytes.</p>
       <form className="ledger-form" onSubmit={changePassword}>
@@ -43,6 +43,6 @@ export default function ProfilePage() {
       </form>
       {(validation || error) && <p role="alert">{validation || error}</p>}
       {message && <p role="status">{message}</p>}
-    </section>
+    </details>
   </div>
 }

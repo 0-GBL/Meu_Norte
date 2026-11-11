@@ -1,0 +1,57 @@
+.assets-page { display: grid; gap: 28px; min-width: 0; }
+.assets-page .asset-overview { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: clamp(22px, 4vw, 36px); background: #112d43; color: #f3f8fc; border-color: #2d5063; }
+.asset-overview p { color: #c5d8e5; font-size: 14px; }
+.asset-overview strong { display: block; margin: 7px 0 10px; font-size: clamp(28px, 5vw, 40px); line-height: 1.2; overflow-wrap: anywhere; }
+.asset-overview small { display: block; color: #c5d8e5; }
+.asset-total-details { margin-top: 12px; max-width: 55ch; font-size: 12px; }
+.asset-total-details summary { cursor: pointer; min-height: 32px; align-content: center; color: #c5d8e5; }
+.asset-total-details p, .asset-total-details li { margin-top: 10px; color: #c5d8e5; font-size: 12px; }
+.asset-section { display: grid; gap: 16px; min-width: 0; }
+.asset-section h2 { font-size: 20px; }
+.asset-section h2 span, .asset-closed summary span { margin-left: 8px; color: var(--muted); font-size: 13px; font-weight: 400; }
+.asset-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); min-width: 0; }
+.asset-card { padding: 22px; display: flex; flex-direction: column; align-items: start; gap: 12px; min-width: 0; }
+.asset-card-heading { display: flex; flex-wrap: wrap; gap: 9px 12px; align-items: baseline; width: 100%; }
+.asset-card h3 { font-size: 17px; font-weight: 650; overflow-wrap: anywhere; }
+.asset-status { border: 1px solid var(--line); border-radius: 20px; padding: 3px 9px; font-size: 11px; color: var(--muted); }
+.asset-category { color: var(--muted); font-size: 13px; }
+.asset-card-value { font-size: 22px; font-weight: 650; overflow-wrap: anywhere; }
+.asset-card-value span { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 400; color: var(--muted); }
+.asset-card > .action-button { margin-top: auto; }
+.asset-empty { padding: 28px; color: var(--muted); }
+.asset-closed { padding: clamp(16px, 3vw, 24px); min-width: 0; }
+.asset-closed > summary { cursor: pointer; min-height: 44px; font-size: 16px; font-weight: 650; }
+.asset-closed .asset-grid { margin-top: 18px; }
+.asset-dialog { padding: 0; width: min(620px, calc(100% - 28px)); max-width: calc(100% - 28px); max-height: calc(100dvh - 32px); margin: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--text); overflow: auto; box-shadow: 0 22px 80px #071d3440; }
+.asset-dialog::backdrop { background: #071d3499; }
+.asset-dialog-content { padding: clamp(18px, 4vw, 30px); display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; min-width: 0; overflow-wrap: anywhere; }
+.asset-dialog :is(details, .table-scroll) { min-width: 0; max-width: 100%; }
+.asset-dialog .action-button { white-space: normal; max-width: 100%; }
+.assets-page .action-button, .asset-dialog .action-button { min-height: 44px; }
+.asset-panel-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.asset-panel-bar > :last-child { margin-left: auto; }
+.asset-dialog header h2 { font-size: 24px; line-height: 1.25; }
+.asset-dialog header p { margin-top: 7px; color: var(--muted); font-size: 13px; }
+.asset-dialog h2:focus { outline: none; }
+.asset-panel-value { font-size: 26px; font-weight: 650; }
+.asset-action-menu { display: grid; gap: 10px; }
+.asset-action-menu > button, .asset-action-menu > a { text-align: left; display: block; padding: 15px 16px; min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); font-weight: 650; text-decoration: none; }
+.asset-action-menu > :hover { border-color: var(--green); }
+.asset-action-menu span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 400; }
+.asset-dialog .asset-short-form, .asset-dialog .asset-short-form > fieldset { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.asset-additional { min-width: 0; }
+.asset-additional > summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; color: var(--muted); font-size: 13px; }
+.asset-form-fields { display: grid; gap: 16px; padding-top: 12px; }
+.asset-facts { display: grid; gap: 16px; margin: 0; min-width: 0; }
+.asset-facts > div { display: grid; gap: 4px; }
+.asset-facts dt { color: var(--muted); font-size: 12px; }
+.asset-facts dd { margin: 0; font-size: 15px; }
+.asset-step { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.asset-wizard { display: grid; gap: 14px; }
+.asset-dialog .ledger-actions { flex-wrap: wrap; }
+.asset-dialog :is(button, a, input, select, summary):focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+@media (max-width: 520px) {
+  .assets-page .asset-overview { align-items: stretch; flex-direction: column; gap: 20px; }
+  .asset-overview .action-button { width: 100%; }
+  .asset-dialog { width: calc(100% - 16px); max-width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 13px; }
+}

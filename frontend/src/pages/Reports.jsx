@@ -7,14 +7,15 @@ import { assetKinds } from './RecordsPages.jsx'
 import { useLedger } from '../LedgerContext.jsx'
 import { formatDate, localDay, money } from '../ledgerFormat.js'
 import './Reports.css'
+import { monthlyComparisonApplicable } from '../../../shared/reportPeriods.mjs'
 
 const presets = [['current', 'Mês atual'], ['previous', 'Mês anterior'], ['3', 'Últimos 3 meses'],
   ['6', 'Últimos 6 meses'], ['12', 'Últimos 12 meses'], ['year', 'Ano atual'], ['custom', 'Personalizado']]
 const types = { income: 'Receita', expense: 'Despesa em conta', transfer: 'Transferência', cardPurchase: 'Compras e ajustes de cartão', cardPayment: 'Pagamento de fatura', assetPurchase: 'Compra patrimonial', assetSale: 'Venda patrimonial' }
 const metrics = [
-  ['income', 'Receitas', ArrowUp, 'Entradas reconhecidas no período.'],
-  ['expenses', 'Despesas por competência', ArrowDown, 'Despesas em conta e gastos líquidos de cartão.'],
-  ['result', 'Resultado por competência', ChartNoAxesCombined, 'Receitas menos despesas por competência.'],
+  ['income', 'Receitas', ArrowUp, 'Receitas comuns; recebimentos patrimoniais são apresentados separadamente.'],
+  ['expenses', 'Despesas', ArrowDown, 'Despesas em conta e gastos de cartão no mês da fatura, descontados os estornos.'],
+  ['result', 'Receitas menos despesas', ChartNoAxesCombined, 'Desconta as despesas das receitas do período. Gastos de cartão seguem o mês da fatura.'],
   ['cash', 'Variação de caixa', ArrowUpDown, 'Movimentos que alteram o saldo das contas.'],
 ]
 const percent = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1, signDisplay: 'exceptZero' })
@@ -44,7 +45,7 @@ function Metric({ label, value, Icon, description, comparison, expense }) {
     <strong className={value < 0 ? 'report-negative' : ''}>{money(value)}</strong>
     {comparison && <div className={'report-change ' + tone}>
       {diff !== 0 && (diff > 0 ? <ArrowUp size={13} aria-hidden="true" /> : <ArrowDown size={13} aria-hidden="true" />)}
-      <span>{diff === 0 ? 'Sem variação' : signedMoney(diff)}{comparison.percent == null ? ' · base anterior zero' : ' · ' + percent.format(comparison.percent) + '%'}</span>
+      <span>{diff === 0 ? 'Sem variação' : signedMoney(diff)}{comparison.percent == null ? ' · sem valor anterior para comparar' : ' · ' + percent.format(comparison.percent) + '%'}</span>
     </div>}
     <p>{description}</p>
   </article>
@@ -120,10 +121,17 @@ function Filters({ data, preset, setPreset, filters, setFilters }) {
           setPreset(value)
           if (value !== 'custom') setFilters(previous => ({ ...previous, ...period(value) }))
         }}>{presets.map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+        <label>Comparação<select value={monthlyComparisonApplicable(filters.from, filters.through) ? filters.comparison ?? 'month' : 'consecutive'}
+          onChange={event => setFilters({ ...filters, comparison: event.target.value })}>
+          {monthlyComparisonApplicable(filters.from, filters.through) && <option value="month">Mesmo período do mês anterior</option>}
+          <option value="consecutive">Intervalo anterior de mesma duração</option>
+        </select></label>
+        <details className="report-extra-filters"><summary>Contas, categorias e outros filtros</summary><div className="filters report-filter-grid">
         {fields.map(([key, label, all, options]) => <label key={key}>{label}<select value={filters[key] ?? ''}
           onChange={event => setFilters({ ...filters, [key]: event.target.value })}>
           <option value="">{all}</option>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
         </select></label>)}
+        </div></details>
       </div>
       {preset === 'custom' && <form className="ledger-form report-dates" onSubmit={event => {
         event.preventDefault()
@@ -149,13 +157,24 @@ function Complement({ report, data, filters }) {
   return <details className="panel detail-panel report-method">
     <summary>Informações complementares e regras de cálculo</summary>
     <p>Transferências próprias não são receitas nem despesas. Pagamentos de fatura reduzem o caixa sem repetir a despesa da compra. Transferências afetam a variação de caixa apenas quando uma conta é selecionada.</p>
-    <p>Parcelas, estornos e encargos seguem o mês da fatura, inclusive em intervalos parciais. O período anterior tem a mesma duração em dias; recortes parciais podem compartilhar um mês de fatura. Compras de cartão não pertencem ao filtro de conta. Datas futuras podem ter valores por competência; o caixa considera lançamentos até hoje.</p>
+    <p>Parcelas, estornos e encargos seguem o mês da fatura, inclusive em intervalos parciais. A comparação mensal usa os mesmos dias, limitados ao último dia do mês anterior; meses completos comparam meses completos. Intervalos que abrangem mais de um mês usam o intervalo anterior de mesma duração. Recortes parciais podem compartilhar um mês de fatura. Compras de cartão não pertencem ao filtro de conta. Datas futuras podem ter valores por competência; o caixa considera lançamentos até hoje.</p>
     <p>O saldo histórico usa o saldo inicial cadastrado e os lançamentos válidos por data. A data efetiva do saldo inicial e mudanças históricas de vínculo patrimonial não são registradas. Contas excluídas com saldo zerado preservam seu histórico.</p>
     <p>As obrigações incluem parcelas futuras de compras registradas e abatimentos de pagamentos e estornos. Saldos negativos e bens ou dívidas vinculados a contas entram uma única vez pelo saldo da conta. Obrigações não registradas ficam fora da estimativa.</p>
     {report.sales.length > 0 && <Table compact label="Bens vendidos no período" rows={report.sales} columns={[
-      { key: 'name', label: 'Bem' }, column('date', 'Data', formatDate), column('amount', 'Valor recebido'),
-      { key: 'result', label: 'Resultado sobre custo', render: row => row.cost == null ? 'Custo desconhecido' : money(row.amount - row.cost) },
+      { key: 'name', label: 'Bem' }, column('date', 'Data', formatDate), column('amount', 'Valor de venda'),
+      { key: 'effect', label: 'Recebimento', render: row => row.entryId ? 'Vinculado ao lançamento · sem duplicação' : 'Informativo · sem entrada de caixa' },
+      { key: 'result', label: 'Resultado patrimonial realizado', render: row => row.cost == null ? 'Custo desconhecido' : money(row.amount - row.cost) },
     ]} />}
+    <p>Resultados patrimoniais realizados são apresentados separadamente. Vendas informativas não geram receita nem caixa. Recebimentos de vendas entram uma única vez no caixa e na tabela abaixo, sem tratar o preço integral como resultado por competência.</p>
+    {(report.receipts?.length > 0) && <>
+      <h2>Recebimentos de vendas patrimoniais · {money(report.assetIncome)}</h2>
+      <Table compact label="Recebimentos patrimoniais confirmados" rows={report.receipts} columns={[
+        { key: 'asset', label: 'Bem vendido', render: row => data.assets.find(asset => asset._id === row.assetId)?.name ?? 'Bem patrimonial' },
+        column('date', 'Data efetiva', formatDate), column('amount', 'Valor recebido'),
+        { key: 'account', label: 'Conta de destino', render: row => data.accounts.find(account => account._id === row.accountId)?.name ?? '—' },
+        { key: 'source', label: 'Origem', render: row => row.source === 'existing' ? 'Lançamento existente vinculado' : 'Venda patrimonial' },
+      ]} />
+    </>}
     {budgets.length > 0 && <><h2>Acompanhamento dos orçamentos</h2>
       {alerts.length > 0 && <p>{alerts.length} {alerts.length === 1 ? 'orçamento está' : 'orçamentos estão'} perto do limite, no limite ou acima dele.</p>}
       <Table compact label="Acompanhamento dos orçamentos" rows={budgets.map(row => ({ ...row, id: row._id }))} columns={[
@@ -190,14 +209,14 @@ export default function Reports() {
   const balances = report?.rows.filter(row => row.date && row.balance != null) ?? []
   const flowRows = report && (mode === 'monthly'
     ? report.rows.map(row => ({ ...row, label: monthLabel(row.month) }))
-    : [{ label: 'Anterior', receitas: report.previous.income, despesas: report.previous.expenses },
-      { label: 'Selecionado', receitas: report.income, despesas: report.expenses }])
+    : [{ label: 'Anterior', period: `${formatDate(report.previous.from)} a ${formatDate(report.previous.through)}`, receitas: report.previous.income, despesas: report.previous.expenses },
+      { label: 'Selecionado', period: `${formatDate(filters.from)} a ${formatDate(filters.through)}`, receitas: report.income, despesas: report.expenses }])
   return <div className="reports-page">
     <header className="report-header">
       <span className="report-eyebrow">MEU NORTE / VISÃO FINANCEIRA</span>
       <h1>Relatórios</h1>
       <p>Acompanhe suas movimentações, a evolução dos saldos e a posição do seu patrimônio.</p>
-      <span className="report-period">{formatDate(filters.from)} a {formatDate(filters.through)}</span>
+      <span className="report-period">Período atual: {formatDate(filters.from)} a {formatDate(filters.through)}</span>
     </header>
     <Filters {...{ data, preset, setPreset, filters, setFilters }} />
     {error ? <div className="panel detail-panel" role="alert"><h2>Não foi possível carregar o relatório</h2><p>{error}</p>
@@ -205,23 +224,25 @@ export default function Reports() {
       : !report && <div className="panel detail-panel report-loading" role="status">Carregando indicadores…</div>}
     {report && <>
       <section className="report-section" aria-labelledby="report-flow">
-        <div className="report-section-title"><h2 id="report-flow">Indicadores do período</h2>
-          <span className="report-pill">Comparação: {formatDate(report.previous.from)} a {formatDate(report.previous.through)}</span></div>
+        <div className="report-section-title"><h2 id="report-flow">Resumo do período</h2>
+          <span className="report-pill">{report.previous.mode === 'month' ? 'Mesmo período do mês anterior' : 'Intervalo anterior de mesma duração'}: {formatDate(report.previous.from)} a {formatDate(report.previous.through)}</span></div>
         <div className="report-metrics">
           {metrics.map(([key, label, Icon, description]) => <Metric key={key} label={label} Icon={Icon}
             value={report.comparison[key].value} comparison={report.comparison[key]} expense={key === 'expenses'} description={description} />)}
         </div>
       </section>
       <Position position={report.position} />
+      <section className="report-section" aria-labelledby="report-charts">
+      <h2 id="report-charts">Gráficos e detalhes</h2>
       <section className="panel detail-panel report-panel">
         <div className="report-section-title"><h2>Receitas e despesas</h2>
           <label className="report-view">Exibição<select value={mode} onChange={event => setMode(event.target.value)}>
             <option value="monthly">Evolução mensal</option><option value="comparison">Comparar períodos</option>
           </select></label></div>
-        <p>Receitas e despesas líquidas por competência.</p>
+        <p>Despesas de cartão seguem o mês da fatura, descontados os estornos.</p>
         {flowRows.some(row => row.receitas || row.despesas) ? <>
           <FlowChart rows={flowRows} />
-          <DataDetails label="Receitas e despesas" rows={flowRows.map(row => ({ ...row, id: row.label }))} columns={flowColumns} />
+          <DataDetails label="Receitas e despesas" rows={flowRows.map(row => ({ ...row, id: row.label }))} columns={mode === 'comparison' ? [flowColumns[0], { key: 'period', label: 'Datas' }, ...flowColumns.slice(1)] : flowColumns} />
         </> : <p className="report-empty">Sem receitas ou despesas para os filtros escolhidos.</p>}
       </section>
       <div className="report-chart-grid">
@@ -242,6 +263,7 @@ export default function Reports() {
           <DistributionChart rows={report.assetCategories} empty="Não há bens ativos avaliados neste recorte." />
         </section>
       </div>
+      </section>
       <Complement {...{ report, data, filters }} />
     </>}
   </div>

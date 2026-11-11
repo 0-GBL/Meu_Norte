@@ -95,13 +95,14 @@ export function periodReport({ entries, accounts, cards, assets, from, through, 
   const matchingAssets = assets.filter(row => row.kind !== 'debt' && !row.accountId && (!assetKind || row.kind === assetKind))
   let balance = accounts.filter(row => !accountId || String(row._id) === accountId).reduce((sum, row) => safeSum(sum, row.initialBalance), 0)
   const rows = []
+  const receipts = []
   const start = new Date(from + 'T00:00:00Z')
   start.setUTCDate(1)
   const months = []
   for (const cursor = start; cursor.toISOString().slice(0, 7) <= through.slice(0, 7); cursor.setUTCMonth(cursor.getUTCMonth() + 1)) {
     months.push(cursor.toISOString().slice(0, 7))
   }
-  const byMonth = new Map(months.map(month => [month, { month, receitas: 0, despesas: 0, cash: 0, balanceDelta: 0 }]))
+  const byMonth = new Map(months.map(month => [month, { month, receitas: 0, despesas: 0, assetIncome: 0, cash: 0, balanceDelta: 0 }]))
   for (const row of entries) {
     if (row.cancelledAt || !selected(row)) continue
     const delta = row.type === 'transfer'
@@ -114,7 +115,13 @@ export function periodReport({ entries, accounts, cards, assets, from, through, 
     const assetType = row.assetOperation === 'purchase' ? 'assetPurchase' : row.assetOperation === 'sale' ? 'assetSale' : null
     if ((!typeMatches(row.type) && !typeMatches(assetType)) || !categoryMatches(row.category)) continue
     if (row.date <= currentDay) month.cash = safeSum(month.cash, delta)
-    if (row.type === 'income') month.receitas = safeSum(month.receitas, row.amount)
+    if (row.type === 'income' && assetType === 'assetSale') {
+      if (row.date <= currentDay) {
+        month.assetIncome = safeSum(month.assetIncome, row.amount)
+        receipts.push({ id: row._id, assetId: row.assetId, date: row.date, amount: row.amount, accountId: row.accountId,
+          source: row.assetReceiptSource ?? 'original' })
+      }
+    } else if (row.type === 'income') month.receitas = safeSum(month.receitas, row.amount)
     if (row.type === 'expense') recordExpense(month, row.category, row.amount)
   }
   if (!accountId && typeMatches('cardPurchase')) {
@@ -168,11 +175,19 @@ export function periodReport({ entries, accounts, cards, assets, from, through, 
       points: [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)) }] : []
   })
   return {
-    rows, valuationSeries, categories: [...categories.values()], assetCategories: [...assetsByCategory].map(([name, amount]) => ({ name, amount })),
-    sales: assets.filter(row => !row.deletedAt && row.sale?.date >= from && row.sale?.date <= through && (!assetKind || row.kind === assetKind))
+    rows, receipts, valuationSeries, categories: [...categories.values()], assetCategories: [...assetsByCategory].map(([name, amount]) => ({ name, amount })),
+    sales: assets.filter(row => {
+      if (row.deletedAt || !row.sale || row.sale.cancelledAt || row.sale.date < from || row.sale.date > through || (assetKind && row.kind !== assetKind)) return false
+      if (type && !['assetSale', 'income'].includes(type)) return false
+      // Informative operations have no account/category; financial filters must match the linked receipt.
+      if (accountId || category || type === 'income') return entries.some(entry =>
+        !entry.cancelledAt && String(entry._id) === String(row.sale.entryId) && selected(entry) && categoryMatches(entry.category))
+      return true
+    })
       .map(row => ({ id: row._id, name: row.name, ...row.sale })),
     ...rows.reduce((totals, row) => ({
       income: safeSum(totals.income, row.receitas), expenses: safeSum(totals.expenses, row.despesas), cash: safeSum(totals.cash, row.cash),
-    }), { income: 0, expenses: 0, cash: 0 }),
+      assetIncome: safeSum(totals.assetIncome, row.assetIncome),
+    }), { income: 0, expenses: 0, cash: 0, assetIncome: 0 }),
   }
 }

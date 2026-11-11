@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import express from 'express'
 import mongoose from 'mongoose'
 import { Account, Asset, Budget, Card, CardEvent, Entry, Goal, GoalEvent, Receipt, Reminder, Valuation, Workspace } from './models.js'
@@ -7,6 +7,8 @@ import { CARD_PAYMENT, cardInput, cardSummary, eventInput, nextCardDates, today,
 import { budgetInput, budgetSummaries, goalEventInput, goalInput, goalSummary, spendingRecords, validateGoalWithdrawal } from './planning.js'
 import { accountReminderKinds, assetInput, assetOperation, assetReminderKinds, cardReminderKinds, isActiveAsset, nextReminder, reminderDue, reminderInput, valuationInput } from './records.js'
 import { periodReport, portfolioPosition, reportComparison, reportSummary } from './reports.js'
+import { comparisonPeriod } from '../../shared/reportPeriods.mjs'
+import { registerAssetReceiptRoutes } from './assetReceipts.js'
 import { createAuth, requireOrigin } from './auth.js'
 
 const digest = value => createHash('sha256').update(value).digest()
@@ -112,8 +114,8 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
   async function write(ownerId, operation) {
     return mongoose.connection.transaction(async session => {
       await Workspace.updateOne({ _id: ownerId }, { $inc: { revision: 1 } }, { session })
-      await operation(session)
-      return snapshot(ownerId, session)
+      const result = await operation(session)
+      return { ...await snapshot(ownerId, session), ...(result?.mutation && { mutation: result.mutation }) }
     })
   }
 
@@ -126,10 +128,11 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
       const previous = await Receipt.findById(receiptId).session(session).lean()
       if (previous) {
         if (previous.fingerprint !== fingerprint) throw new RequestError(409, 'A chave de envio já foi usada para outro registro.')
-        return
+        return previous.mutation?.message ? { mutation: previous.mutation } : undefined
       }
-      await operation(session)
-      await Receipt.create([{ _id: receiptId, fingerprint }], { session })
+      const result = await operation(session)
+      await Receipt.create([{ _id: receiptId, fingerprint, ...(result?.mutation && { mutation: result.mutation }) }], { session })
+      return result
     })
   }
 
@@ -174,6 +177,10 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
     const category = typeof req.query.category === 'string' ? req.query.category.slice(0, 120) : ''
     const type = typeof req.query.type === 'string' ? req.query.type : ''
     const assetKind = typeof req.query.assetKind === 'string' ? req.query.assetKind : ''
+    if (req.query.comparison && !['month', 'consecutive'].includes(req.query.comparison)) {
+      throw new RequestError(400, 'Escolha uma comparação válida.')
+    }
+    const comparison = comparisonPeriod(from, through, req.query.comparison)
     if (type && !['income', 'expense', 'transfer', 'cardPurchase', 'cardPayment', 'assetPurchase', 'assetSale'].includes(type)) {
       throw new RequestError(400, 'Escolha um tipo de movimentação válido.')
     }
@@ -186,7 +193,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
       const accounts = await Account.find({ owner }).select('initialBalance').session(session).lean()
       if (accountId && !accounts.some(row => String(row._id) === accountId)) throw new RequestError(404, 'Conta não encontrada.')
       const entries = await Entry.find({ owner, cancelledAt: null, date: { $lte: through } })
-        .select('accountId destinationId amount category date type assetOperation').session(session).lean()
+        .select('accountId destinationId amount category date type assetOperation assetId assetReceiptSource').session(session).lean()
       const cards = []
       const group = (rows, key) => {
         const groups = new Map()
@@ -204,14 +211,12 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
       const values = group(await Valuation.find({ owner, date: { $lte: date } }).sort({ date: -1, _id: -1 }).session(session).lean(), 'assetId')
       const assets = assetRows.map(asset => ({ ...asset, valuations: values.get(String(asset._id)) ?? [] }))
       const input = { entries, accounts, cards, assets, accountId, category, type, assetKind, currentDay }
-      const days = Math.round((Date.parse(through) - Date.parse(from)) / 86_400_000) + 1
-      const previousFrom = offsetDay(from, -days)
-      const previousThrough = offsetDay(from, -1)
+      const { from: previousFrom, through: previousThrough } = comparison
       const previous = periodReport({ ...input, assets: [], from: previousFrom, through: previousThrough })
       const current = periodReport({ ...input, from, through })
       return { ...current, position: portfolioPosition({ entries, accounts, cards, assets, date }),
         comparison: reportComparison(current, previous),
-        previous: { from: previousFrom, through: previousThrough, income: previous.income, expenses: previous.expenses, cash: previous.cash } }
+        previous: { ...comparison, income: previous.income, expenses: previous.expenses, cash: previous.cash } }
     }, { readConcern: { level: 'snapshot' } }))
   })
   app.post('/api/ledger/accounts', async (req, res) => {
@@ -397,6 +402,16 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
   })
 
   async function validateReminderLink(owner, data, session) {
+    if (data.kind === 'assetReceipt') {
+      if (!await Asset.exists({ owner, _id: data.linkId, deletedAt: null, status: 'sold',
+        'sale.cancelledAt': null, 'sale.entryId': null, 'sale.expectedOn': data.dueOn }).session(session)) {
+        throw new RequestError(409, 'O recebimento mudou. Gerencie o lembrete pelo bem vendido.')
+      }
+      if (await Reminder.exists({ owner, kind: 'assetReceipt', linkId: data.linkId, status: 'active', _id: { $ne: data._id } }).session(session)) {
+        throw new RequestError(409, 'Já existe um lembrete ativo para este recebimento.')
+      }
+      return
+    }
     const Model = accountReminderKinds.includes(data.kind) ? Account :
       cardReminderKinds.includes(data.kind) ? Card : assetReminderKinds.includes(data.kind) ? Asset : null
     if (Model && !await Model.exists({ _id: data.linkId, owner, deletedAt: null, ...(Model === Asset && { endedOn: null }) }).session(session)) {
@@ -418,6 +433,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
     res.json(await write(req.owner, async session => {
       const row = await Reminder.findOne(filter).session(session)
       if (!row) throw new RequestError(404, 'Lembrete ativo não encontrado.')
+      if (row.kind === 'assetReceipt') throw new RequestError(409, 'Altere a previsão pelo gerenciamento do recebimento.')
       await validateReminderLink(req.owner, data, session)
       if (data.kind !== row.kind || String(data.linkId) !== String(row.linkId)) {
         row.cardCycle = cardReminderKinds.includes(data.kind) ? data.kind === 'cardOpen' ? '1900-01-01' : today() : undefined
@@ -447,6 +463,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
       const owner = req.owner
       const row = await Reminder.findOne({ _id: reminderId, owner, deletedAt: null }).session(session)
       if (!row) throw new RequestError(404, 'Lembrete não encontrado.')
+      if (row.kind === 'assetReceipt' && action === 'snooze') throw new RequestError(409, 'Reagende a previsão pelo bem vendido para manter o histórico.')
       if (action === 'reactivate') {
         if (row.status === 'active') throw new RequestError(409, 'O lembrete já está ativo.')
         await validateReminderLink(owner, row, session)
@@ -569,6 +586,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
         if (!row) throw new RequestError(409, 'Escolha um lançamento disponível com tipo, data e valor correspondentes.')
         row.assetId = assetId
         row.assetOperation = data.type
+        if (!purchase) row.assetReceiptSource = 'existing'
         await row.save({ session })
         entryId = row._id
       }
@@ -578,7 +596,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
         }
         entryId = new mongoose.Types.ObjectId()
         await saveEntry(owner, {
-          _id: entryId, assetId, assetOperation: data.type, type, date: data.date, amount: data.amount,
+          _id: entryId, assetId, assetOperation: data.type, ...(!purchase && { assetReceiptSource: 'new' }), type, date: data.date, amount: data.amount,
           accountId: data.accountId, category: 'Patrimônio', description: (purchase ? 'Compra · ' : 'Venda · ') + asset.name,
           ...(purchase && { expenseKind: 'variable' }),
         }, null, session)
@@ -590,13 +608,16 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
       } else {
         asset.status = data.type === 'sale' ? 'sold' : 'retired'
         asset.endedOn = data.date
-        if (data.type === 'sale') asset.sale = { date: data.date, amount: data.amount, entryId, cost: asset.acquired ?? null }
+        if (data.type === 'sale') asset.sale = { date: data.date, amount: data.amount, entryId, cost: asset.acquired ?? null,
+          operationId: randomUUID(), history: [{ action: 'sale', mode: data.mode, entryId, recordedAt: new Date() }] }
         await Reminder.updateMany({ owner, kind: { $in: assetReminderKinds }, linkId: assetId, status: 'active' },
           { $set: { status: 'cancelled' } }, { session })
       }
       await asset.save({ session })
     }))
   })
+
+  registerAssetReceiptRoutes(app, { createOnce, saveEntry })
 
   app.use('/api', (_req, res) => res.status(404).json({ message: 'Endereço não encontrado.' }))
   app.use((error, _req, res, next) => {

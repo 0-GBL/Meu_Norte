@@ -44,6 +44,8 @@
 .report-link { color: var(--green); font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .report-filter-toggle, .report-link, .report-data summary, .report-method summary { min-height: 34px; }
 .report-filter-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+.report-extra-filters { grid-column: 1 / -1; min-width: 0; }
+.report-extra-filters > summary { min-height: 44px; cursor: pointer; align-content: center; color: var(--muted); font-size: 13px; }
 .report-active-filters { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
 .report-dates { margin-top: 12px; }
 .report-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(14px, 2vw, 20px); }

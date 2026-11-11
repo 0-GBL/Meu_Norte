@@ -135,9 +135,11 @@ export function LedgerProvider({ children }) {
     }
     setFeedback({ locationKey, pending: true, text: 'Salvando…' })
     try {
-      setData(await request('/ledger' + path, { method, body, idempotencyKey }))
+      const result = await request('/ledger' + path, { method, body, idempotencyKey })
+      const { mutation, ...ledger } = result
+      setData(ledger)
       if (idempotencyKey) pendingCreates.current.delete(fingerprint)
-      setFeedback({ locationKey, text: method === 'DELETE' ? 'Registro excluído.' : 'Alteração salva.' })
+      setFeedback({ locationKey, text: mutation?.message ?? (method === 'DELETE' ? 'Registro excluído.' : 'Alteração salva.') })
     } catch (error) {
       setFeedback(null)
       if (error.status === 401) clearSession()

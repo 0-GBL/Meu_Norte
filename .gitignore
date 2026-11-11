@@ -6,3 +6,24 @@ coverage/
 !.env.example
 *.local
 *.log
+
+# Caches and local editor/OS artifacts
+.cache/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Private keys, credentials and local database exports
+secrets/
+credentials*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+backups/
+dumps/
+exports/
+*.bson
+*.bson.gz
+*.mongodump

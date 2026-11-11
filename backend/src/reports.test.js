@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { cardSummary } from './cards.js'
 import { periodReport, portfolioPosition, reportComparison } from './reports.js'
+import { comparisonPeriod } from '../../shared/reportPeriods.mjs'
 
 const date = '2025-02-28'
 const accounts = [{ _id: 'a', initialBalance: 10000, archived: true },
@@ -68,4 +69,59 @@ test('compara intervalos, sem percentual indefinido ou inversão com base negati
   assert.deepEqual(reportComparison(periodReport(input), prior).income, { value: 6000, difference: 6000, percent: null })
   assert.deepEqual(reportComparison({ income: 500, expenses: 1000, cash: -500 },
     { income: 0, expenses: 1000, cash: -1000 }).result, { value: -500, difference: 500, percent: 50 })
+})
+
+test('aplica datas escolhidas aos totais e linhas sem mudar competência de cartão ou posição', () => {
+  const input = { accounts: [{ initialBalance: 100 }], assets: [], cards: [{ used: 0, spending: [
+    { month: '2026-10', amount: 50, category: 'Cartão' }, { month: '2026-11', amount: 80, category: 'Cartão' },
+  ] }], currentDay: '2026-11-11', entries: [
+    { type: 'income', date: '2026-10-05', amount: 100 },
+    { type: 'income', date: '2026-10-25', amount: 200 },
+    { type: 'income', date: '2026-11-05', amount: 300 },
+  ] }
+  const current = periodReport({ ...input, from: '2026-11-01', through: '2026-11-11' })
+  const position = portfolioPosition({ ...input, date: '2026-11-11' })
+  for (const [mode, income] of [['month', 100], ['consecutive', 200]]) {
+    const prior = periodReport({ ...input, ...comparisonPeriod('2026-11-01', '2026-11-11', mode) })
+    assert.equal(prior.income, income)
+    assert.equal(prior.rows[0].receitas, income)
+    assert.equal(prior.expenses, 50)
+    assert.equal(reportComparison(current, prior).income.difference, 300 - income)
+    assert.deepEqual(portfolioPosition({ ...input, date: '2026-11-11' }), position)
+  }
+  assert.equal(current.expenses, 80)
+})
+
+test('vendas informativas e baixas preservam histórico e não geram receita, caixa ou patrimônio ativo', () => {
+  const ended = [
+    asset('vehicle', [], { acquired: 2000000, status: 'sold', endedOn: date, sale: { date, amount: 1800000, cost: 2000000 } }),
+    asset('equipment', [valuation(90000)], { acquired: 100000, status: 'retired', endedOn: date }),
+    asset('other', [valuation(50000)], { acquired: 60000, status: 'sold', endedOn: date,
+      sale: { date, amount: 45000, cost: 60000, entryId: 'receipt' } }),
+  ]
+  const receipt = entry('income', 45000, { _id: 'receipt', date, assetId: 'other', assetOperation: 'sale' })
+  const fixture = { ...input, assets: ended, entries: [receipt] }
+  const before = structuredClone(fixture)
+  const report = periodReport(fixture)
+  assert.equal(report.income, 0)
+  assert.equal(report.assetIncome, 45000)
+  assert.equal(report.cash, 45000)
+  assert.equal(report.expenses, 3500)
+  assert.equal(report.sales.length, 2)
+  assert.equal(report.sales[0].amount - report.sales[0].cost, -200000)
+  assert.equal(report.sales[1].entryId, 'receipt')
+  assert.deepEqual(report.assetCategories, [])
+  const position = portfolioPosition({ ...fixture, date })
+  assert.equal(position.evaluatedAssets, 0)
+  assert.equal(position.pendingAssets, 0)
+  assert.equal(position.balance, 53500)
+  const informative = periodReport({ ...fixture, entries: [] })
+  assert.deepEqual([informative.income, informative.cash], [0, 0])
+  assert.equal(portfolioPosition({ ...fixture, entries: [], date }).balance, 8500)
+  assert.equal(portfolioPosition({ ...fixture, date: '2025-02-27' }).evaluatedAssets, 140000)
+  assert.deepEqual(periodReport({ ...fixture, accountId: 'a' }).sales.map(row => row.entryId), ['receipt'])
+  assert.deepEqual(periodReport({ ...fixture, category: 'Ausente' }).sales, [])
+  assert.deepEqual(periodReport({ ...fixture, type: 'expense' }).sales, [])
+  assert.deepEqual(periodReport({ ...fixture, type: 'assetSale' }).sales, report.sales)
+  assert.deepEqual(fixture, before)
 })

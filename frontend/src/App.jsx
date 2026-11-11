@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowUpRight, Bell, Compass, Menu, Moon, Sun, X } from 'lucide-react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { modules, overview, settings } from './navigation.js'
+import { modules, overview, settings, sidebarLinks, sidebarGroups } from './navigation.js'
 import Dashboard from './pages/Dashboard.jsx'
 import ModulePage from './pages/ModulePage.jsx'
 import { useLedger } from './LedgerContext.jsx'
@@ -15,6 +15,17 @@ const notificationClock = new Intl.DateTimeFormat('sv-SE', {
 function SidebarLink({ item }) {
   const Icon = item.icon
   return <NavLink to={item.path} end className="side-link"><Icon size={18} />{item.label}</NavLink>
+}
+
+function SidebarGroup({ group, pathname }) {
+  const disclosure = useRef(null)
+  useEffect(() => {
+    if (group.items.some(item => item.path === pathname)) disclosure.current.open = true
+  }, [group, pathname])
+  return <details className="sidebar-group" ref={disclosure}>
+    <summary>{group.label}</summary>
+    {group.items.map(item => <SidebarLink key={item.path} item={item} />)}
+  </details>
 }
 
 export default function App() {
@@ -73,19 +84,19 @@ export default function App() {
           <span className="brand-icon"><Compass size={24} /></span>
           <span>Meu Norte<small>FINANÇAS PESSOAIS</small></span>
         </Link>
-        {!user.mustChangePassword && <nav aria-label="Navegação principal" onClick={() => setMenuPath(null)}>
+        {!user.mustChangePassword && <nav aria-label="Navegação principal" onClick={event => { if (event.target.closest('a')) setMenuPath(null) }}>
           <div className="nav-caption">ESPAÇO FINANCEIRO</div>
           <SidebarLink item={overview} />
-          {modules.map(item => <SidebarLink key={item.path} item={item} />)}
+          {sidebarLinks.map(item => <SidebarLink key={item.path} item={item} />)}
+          {sidebarGroups.map(group => <SidebarGroup key={group.label} group={group} pathname={pathname} />)}
           <div className="nav-caption settings-caption">PREFERÊNCIAS</div>
           <SidebarLink item={settings} />
         </nav>}
         <div className="sidebar-foot sidebar-profile">
           <div className="avatar" aria-hidden="true">{user.name.slice(0, 2).toUpperCase()}</div>
-          <div><strong>{user.name}</strong><small>{user.email}</small>
-            {user.role === 'admin' && <span className="admin-badge">Administrador</span>}
+          <div><strong>{user.name}</strong>
             <div className="sidebar-profile-actions">
-              <NavLink to="/perfil" onClick={() => setMenuPath(null)}>Meu Perfil</NavLink>
+              <NavLink to="/perfil" onClick={() => setMenuPath(null)}>Minha conta</NavLink>
               <button type="button" disabled={busy} onClick={() => authenticate('logout', {})}>Sair</button>
             </div>
           </div>

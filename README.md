@@ -1,77 +1,158 @@
 # Meu Norte
 
-Sua vida financeira, na direção certa.
+**Sua vida financeira, na direção certa.**
 
-O Meu Norte reúne contas, movimentações, cartões, orçamentos, metas, lembretes, patrimônio e relatórios. O acesso usa sessão autenticada e MongoDB Atlas.
+Aplicativo de finanças pessoais desenvolvido como projeto de portfólio. Reúne contas, movimentações, cartões, planejamento, patrimônio, lembretes e relatórios em uma interface com opções avançadas sob demanda, temas claro/escuro e suporte a telas pequenas.
 
-## Inicialização local
+Esta versão está encerrada para novas funcionalidades e validada nos cenários descritos em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md). Está preparada para apresentação do código e execução local conforme os requisitos abaixo; **não há homologação suficiente para disponibilização pública em produção**.
 
-Use Node.js 20.19+ ou 22.12+ e npm. A partir da raiz, instale as dependências.
+## Funcionalidades
+
+- Login administrativo, sessão persistente, troca de senha e recuperação por e-mail quando SMTP está configurado.
+- Contas com saldos, transferências, arquivamento e exclusão protegida.
+- Receitas/despesas e histórico unificado com busca, filtros, referências, edição e cancelamento.
+- Cartões com compras parceladas, faturas, pagamentos parciais, estornos, encargos e crédito.
+- Orçamentos mensais e metas, com registros informativos ou transferências entre contas.
+- Bens, avaliações, compra/venda/baixa e recebimentos patrimoniais integrais, com previsão e histórico.
+- Lembretes recorrentes e notificações internas, com confirmação manual por ocorrência.
+- Relatórios 2.0 com comparação de períodos, competência, caixa e posição patrimonial.
+
+Não há integração bancária automática, geração automática de receitas/despesas recorrentes ou um modo de demonstração embutido. Os dados fictícios pertencem somente aos testes isolados.
+
+## Tecnologias e estrutura
+
+**Frontend:** React 19, React Router, Vite 7, Tailwind CSS 4, Recharts e Lucide. **Backend:** Node.js, Express 5, Mongoose 9, MongoDB, bcryptjs e Nodemailer. **Validação:** `node:test`, MongoDB temporário em replica set e Chrome headless.
+
+```text
+backend/
+  src/          API, autenticação, modelos, regras financeiras e testes
+  scripts/      runner de integração com MongoDB local temporário
+frontend/
+  src/          páginas, componentes, contexto de sessão/dados e estilos
+  scripts/      testes de navegador, integração e contraste
+shared/         validações e regras de datas compartilhadas
+VALIDACAO_FINAL.md
+```
+
+As rotas `/api/ledger` usam o espaço financeiro definido pela sessão autenticada. Operações relacionadas executam em transações MongoDB; a revisão do espaço serializa gravações concorrentes. Criações recebem chave de idempotência para evitar repetição do mesmo envio.
+
+## Requisitos
+
+- Node.js **22.12+** e npm; as validações finais foram executadas com Node.js 24.
+- MongoDB com **replica set e suporte a transações**: Atlas privado ou instalação local equivalente. Uma instância standalone não atende aos fluxos transacionais.
+- Chrome para os testes de navegador. Defina `CHROME_PATH` se o executável não estiver no caminho esperado pelo script.
+- As suítes isoladas baixam um binário MongoDB caso ele ainda não esteja em cache. Não precisam de acesso ao Atlas.
+
+## Instalação e configuração local
+
+Execute a partir da raiz do repositório. No PowerShell, use `npm.cmd` se a política de execução bloquear `npm.ps1`.
 
 ```powershell
-npm.cmd --prefix backend ci
-npm.cmd --prefix frontend ci
+npm --prefix backend ci
+npm --prefix frontend ci
+
+# Crie apenas se o arquivo ainda não existir. Nunca substitua um .env real.
+if (!(Test-Path backend/.env)) {
+  Copy-Item backend/.env.example backend/.env
+}
 ```
 
-Se `backend/.env` ainda não existir, use `backend/.env.example` como modelo. Em um arquivo existente, adicione apenas as variáveis necessárias e preserve `MONGODB_URI` e as demais configurações. A API requer um banco Atlas com suporte a transações. O frontend usa o proxy local do Vite por padrão. `CLIENT_ORIGIN` deve corresponder à origem aberta no navegador.
+Preencha `backend/.env` apenas no seu computador, com os dados do seu banco privado. Os exemplos versionados não contêm credenciais.
 
-Adicione ao `backend/.env` local as variáveis abaixo. Substitua o marcador pela senha inicial informada para o ambiente local.
+| Variável | Uso |
+| --- | --- |
+| `MONGODB_URI` | Conexão privada do banco com replica set; obrigatória |
+| `CLIENT_ORIGIN` | Origem exata do frontend; padrão local `http://localhost:5173` |
+| `PORT` | Porta da API; padrão `3001` |
+| `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | Configuração inicial do administrador, somente no ambiente local de desenvolvimento |
+| `INITIAL_ADMIN_LEGACY_OWNER` | Opcional, somente para associar um administrador inicial a um espaço anterior já existente |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Recuperação por e-mail; opcional e com TLS |
+| `NODE_ENV` | Configuração do ambiente; não use `production` para a criação local inicial do administrador |
 
-```dotenv
-INITIAL_ADMIN_NAME=Administrador
-INITIAL_ADMIN_EMAIL=admin@meunorte.com
-INITIAL_ADMIN_PASSWORD=<senha inicial local>
-```
+O frontend usa o proxy `/api` do Vite. `VITE_LEDGER_API_URL` pode definir outra base pública, quando necessário. Nunca coloque senhas, tokens ou segredos em variáveis `VITE_*`: elas são destinadas ao código público do navegador. `frontend/.env.local` é local e ignorado pelo Git.
 
-Se você usava a antiga chave local e quer que o administrador abra esse mesmo espaço, confirme o valor antigo de `LEDGER_OWNER` e defina `INITIAL_ADMIN_LEGACY_OWNER` com esse identificador **antes da primeira inicialização**. A configuração padrão antiga era `local`. A API verifica que o espaço existe e associa o login a ele sem alterar o proprietário dos documentos. Sem essa opção, cria um espaço independente. Contas previamente cadastradas continuam acessando seus próprios registros com o login existente.
+### Administrador inicial
 
-Inicie a API e o frontend em terminais separados.
+1. Em uma instalação local nova, preencha nome, e-mail e uma senha inicial exclusiva nas variáveis `INITIAL_ADMIN_*`. Prefira uma senha forte com pelo menos 12 caracteres, respeitando o limite de 72 bytes.
+2. Inicie a API e entre com esses dados. Em **Meu Perfil**, altere a senha para liberar os módulos financeiros.
+3. Remova as variáveis iniciais do seu ambiente após a troca. A criação é idempotente: reiniciar a API não redefine a senha de uma conta já existente.
+
+Se houver um espaço legado, configure `INITIAL_ADMIN_LEGACY_OWNER` **antes da primeira criação** e somente com o identificador conhecido desse espaço. Sem essa opção, o administrador recebe um espaço independente. Não use essa configuração para tentar substituir um administrador existente.
+
+Esta documentação não redefine credenciais existentes. A recuperação de senha requer SMTP configurado; os testes usam um simulador e não enviam mensagens externas.
+
+### Executar
+
+Abra dois terminais na raiz:
 
 ```powershell
-npm.cmd --prefix backend run dev
-npm.cmd --prefix frontend run dev -- --strictPort
+# Terminal 1
+npm --prefix backend run dev
+
+# Terminal 2
+npm --prefix frontend run dev -- --strictPort
 ```
 
-Abra http://localhost:5173/entrar. Entre com o e-mail e a senha inicial configurados. Em **Meu Perfil**, escolha uma nova senha de pelo menos 12 caracteres e até 72 bytes para liberar o espaço financeiro. A configuração inicial é idempotente e reiniciar a API preserva a senha atual. Depois da troca, remova as variáveis `INITIAL_ADMIN_*` do ambiente local. A sessão permanece ao atualizar a página. **Sair** encerra a sessão atual.
+Abra [http://localhost:5173/entrar](http://localhost:5173/entrar). A API local escuta em `127.0.0.1:3001`. A origem aberta no navegador deve corresponder a `CLIENT_ORIGIN`; mudar entre `localhost`, `127.0.0.1` ou outra porta exige configuração consistente.
 
-Em produção, configure `NODE_ENV=production`, uma origem HTTPS em `CLIENT_ORIGIN` e o proxy de `/api` para o backend. As demais rotas usam o fallback para `index.html`. A inicialização local por variáveis fica indisponível em produção. O administrador precisa ter trocado a senha inicial antes de entrar nesse ambiente. A sessão usa HttpOnly, SameSite Strict e Secure em HTTPS. A limitação de tentativas é mantida por processo, IP e conta.
-
-A recuperação de contas existentes pode usar `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` e, quando exigidos, `SMTP_USER` e `SMTP_PASS`. O envio usa TLS e os links expiram após 30 minutos. A troca da senha inicial é feita no perfil.
-
-## Regras financeiras
-
-Os campos de valor aceitam digitação ou colagem em reais e exibem a formatação brasileira ao sair do campo. A validação usa centavos inteiros e o limite de R$ 999.999.999,99 por valor. Campos de data completa aceitam DD/MM/AAAA e oferecem um calendário com navegação por mês, ano e teclado. A interface aceita novas datas de 1900 a 2199 e permite manter datas anteriores já salvas. Os dias de fechamento e vencimento dos cartões podem ser digitados ou selecionados de 1 a 31. As próximas datas usam o mesmo ciclo das faturas e incluem o vencimento de um ciclo já fechado quando ele ainda está por vir.
-
-- Todos os valores são registrados em centavos inteiros. O saldo das contas considera o saldo inicial e as movimentações registradas, inclusive contas arquivadas. Transferências alteram apenas a distribuição dos saldos.
-- As compras entram no ciclo de fechamento. Compras no dia do fechamento ficam no mesmo ciclo. Dias maiores que o mês usam seu último dia. O vencimento é no mesmo mês se cair após o fechamento e no mês seguinte nos demais casos. Fechamento e vencimento ficam fixos após o primeiro lançamento.
-- Parcelas somam o valor original. Centavos que sobrarem são distribuídos nas primeiras parcelas. Pagamentos integrais ou parciais baixam o caixa e a fatura na mesma transação. Orçamentos e relatórios contabilizam parcelas, encargos e estornos no ciclo da fatura. Estornos podem gerar crédito para ciclos seguintes e são limitados ao valor da compra.
-- Os orçamentos mensais têm alerta a partir de 80% do limite. O orçamento geral agrega todas as categorias. A previsão das metas usa o valor mensal planejado.
-- Excluir um cartão exige faturas liquidadas e crédito zerado. As faturas e os lançamentos continuam disponíveis para consulta. Pagamentos com a mesma fatura, conta, data e valor são tratados como duplicados, mesmo com outra chave de envio.
-- Editar ou excluir um limite altera apenas o planejamento. As despesas continuam no histórico. Uma meta tem descrição e prazo opcionais e aparece como concluída ao atingir o alvo.
-- Em metas, um aporte ou retirada informativo afeta somente o progresso. Um registro com transferência exige duas contas ativas, altera os saldos individuais e mantém o consolidado. Retiradas respeitam a reserva registrada para aquela conta ou o total informativo, conforme o tipo. Excluir a meta conserva os lançamentos e o histórico, acessível na página de metas.
-- Lembretes exigem confirmação manual. A confirmação avança a recorrência sem lançar receita ou despesa. O adiamento preserva o dia de referência da recorrência.
-- As avaliações patrimoniais são manuais. O total patrimonial mostra bens ativos avaliados, exclui obrigações e evita somar bens representados em contas. Saldos e faturas são apresentados separadamente. O histórico de saldos usa os saldos iniciais informados como ponto de partida.
-- Reenvios com a mesma chave de envio são tratados na mesma transação dos registros. As rotas financeiras determinam o espaço a partir da sessão ou da chave de desenvolvimento.
-
-## Patrimônio, lembretes e histórico
-
-- Avaliações não alteram o caixa. Compra ou venda informativa registra somente o fato patrimonial. No modo vinculado, reaproveite um lançamento de tipo, data e valor compatíveis ou crie um lançamento na conta na mesma transação. O resultado realizado usa o valor recebido menos o custo de aquisição registrado na data da venda. Se o custo for desconhecido, o resultado fica em aberto.
-- Excluir conta exige saldo zero, ausência de lançamentos futuros e encerramento ou desvinculação de lembretes e bens ativos. Lançamentos vinculados ou associados a contas excluídas ficam protegidos. Movimentações comuns podem ser corrigidas com registro da versão anterior ou canceladas sem apagar a referência histórica.
-- Lembretes mensais preservam o dia original e usam o último dia válido em meses curtos. Lembretes anuais de 29 de fevereiro usam 28 de fevereiro nos anos comuns e voltam a 29 nos bissextos. Os horários e avisos internos seguem o fuso de São Paulo. Lembretes de cartão derivam o calendário das faturas e a dispensa avança apenas a ocorrência selecionada.
-- Em **Relatórios**, competência e caixa são exibidos separadamente. Parcelas e estornos entram no mês da fatura; pagamentos alteram o caixa, sem repetir a despesa. Transferências aparecem na variação de caixa de uma conta individual, sem virar receita ou despesa. O período anterior tem a mesma duração em dias; intervalos parciais podem compartilhar um mês de fatura.
-- O **Resumo Patrimonial** usa o último dia do período, limitado a hoje, e consolida todas as contas. Soma o saldo assinado e as últimas avaliações de bens ativos, depois desconta dívidas avaliadas e o saldo pendente dos cartões, incluindo parcelas de compras já registradas. Bens e dívidas vinculados a contas não são somados outra vez. Avaliações faltantes aparecem como pendências; o custo de aquisição serve apenas de referência no gráfico.
-- A evolução das avaliações mostra os registros nas datas efetivas, por bem. A distribuição patrimonial aplica apenas o filtro de categoria patrimonial e exclui bens vendidos ou baixados na data de referência. O histórico usa os saldos iniciais informados: o sistema não registra sua data efetiva nem versões históricas dos vínculos com contas.
-
-## Verificar
+## Testes e build
 
 ```powershell
-npm.cmd --prefix backend test
-npm.cmd --prefix frontend test
-npm.cmd --prefix frontend run build
+npm --prefix backend run test:isolated
+npm --prefix frontend test
+npm --prefix frontend run build
+npm --prefix frontend run test:reports-browser
+npm --prefix frontend run test:app-browser
 ```
 
-Os testes de integração precisam de `MONGODB_TEST_URI` no ambiente do terminal. Use um replica set de teste com permissão para criar e remover um banco. A suíte cria um banco com nome aleatório, usa registros fictícios e remove apenas esse banco ao terminar. Ela testa concorrência, reenvios, isolamento, persistência após reconexão e recuperação por meio de um simulador de e-mail. Para validar entrega real, configure SMTP em um ambiente de teste.
+- `test:isolated`: executa todos os testes de backend em replica set local temporário. Não carrega `.env` nem reaproveita a URI do Atlas.
+- `frontend test`: testes unitários de valores, datas, apresentação e lembretes.
+- `test:reports-browser`: fixtures locais para patrimônio, relatórios, erros, estados vazios e auditoria de controles nos dois temas.
+- `test:app-browser`: login real e fluxos pelo navegador contra a API Express e um MongoDB temporário local, com dados exclusivos do teste.
+- `build`: gera `frontend/dist`, que permanece ignorado pelo Git.
 
-O build gera `frontend/dist`.
+As suítes de integração recusam URIs remotas. `npm --prefix backend test` sem `MONGODB_TEST_URI` executa os testes unitários e ignora as integrações; prefira o runner isolado para validar a versão completa. Não configure `MONGODB_TEST_URI` com uma conexão do Atlas.
 
-Depois do build, execute `npm.cmd --prefix frontend run test:reports-browser` para verificar os relatórios no Chrome em quatro larguras, incluindo filtros, falha da API e estados vazios. O teste usa um servidor temporário com dados isolados. Se o Chrome estiver em outro caminho, configure `CHROME_PATH` no terminal.
+Última execução final: **48 testes de backend, 16 de frontend e 15 fluxos de ponta a ponta aprovados**, sem reprovações ou testes ignorados. A auditoria percorreu **96 telas, 48 estados representativos e 2.826 medições de texto/ícones**, em 320, 390, 900 e 1440 px. O build foi concluído. Evidências e limites estão em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md).
+
+## Regras de integridade preservadas
+
+- Valores usam centavos inteiros; transferências próprias não são receitas ou despesas.
+- Compras de cartão entram por competência da fatura. Pagamentos alteram o caixa sem repetir a despesa. Parcelas preservam os centavos; pagamentos duplicados são protegidos.
+- Contas com saldo ou dependências não podem ser excluídas. Exclusões lógicas e cancelamentos preservam referências e histórico.
+- Avaliações e vendas patrimoniais informativas não movimentam contas. Recebimentos confirmados entram uma única vez no caixa, separados das receitas comuns nos Relatórios 2.0.
+- O preço e o custo original de uma venda ficam bloqueados. Correções exigem cancelamento controlado e novo registro; recebimentos ativos precisam de tratamento financeiro explícito antes do cancelamento da venda.
+- Bens vendidos ou baixados ficam fora do patrimônio ativo, preservando avaliações e operações anteriores.
+- Salvar uma previsão inalterada não cria reagendamento nem reabre notificações. Mudanças apenas no lembrete têm registro próprio.
+- Comparações mensais usam os mesmos dias do mês anterior, com ajuste para meses curtos; meses completos comparam meses completos. O intervalo consecutivo continua disponível. As datas são tratadas sem deslocamentos de fuso.
+
+## Segurança e limitações
+
+Sessões usam tokens aleatórios armazenados com hash, validade de sete dias e cookies HttpOnly/SameSite Strict, com Secure em HTTPS. A API verifica origem, propriedade dos registros, validade da sessão, entradas e limites de tentativas. Logs de falha não imprimem credenciais ou corpos das requisições.
+
+A revisão local dos arquivos candidatos ao commit e dos dois commits disponíveis não encontrou indícios de segredos nos padrões verificados. `npm audit` não apontou vulnerabilidades conhecidas nas dependências instaladas na consulta registrada. Essas verificações não substituem revisão humana, auditoria externa ou monitoramento futuro de avisos.
+
+Limitações desta versão: recebimentos patrimoniais integrais; recorrência restrita a lembretes com confirmação manual; limitação de login por processo; ausência de importação/conciliação bancária; posição histórica dependente do saldo inicial cadastrado e sem versões históricas de vínculos com contas.
+
+Antes de uma disponibilização pública, ainda é necessário homologar HTTPS/proxy/cookies, SMTP, backups/restauração, volume de dados, outros navegadores, dispositivos físicos e tecnologias assistivas. O Chrome automatizado e os testes de contraste realizados não equivalem a homologação de produção ou certificação completa de acessibilidade.
+
+## Commit final seguro
+
+As alterações das etapas anteriores e arquivos novos precisam ser revisados juntos. Nenhum commit ou envio remoto é feito automaticamente.
+
+```powershell
+git status --short
+git diff --check
+git diff
+
+# Após revisar, inclua somente código, testes e documentação conhecidos.
+git add -- .gitignore README.md VALIDACAO_FINAL.md backend/src backend/scripts backend/package.json backend/package-lock.json frontend/src frontend/scripts frontend/package.json frontend/package-lock.json shared
+
+git diff --cached --stat
+git diff --cached --name-only
+git diff --cached
+```
+
+Confira que o índice não contém `.env` reais, chaves privadas, credenciais, exports de dados, dumps, logs, `node_modules` ou `dist`. Os arquivos `.env.example` devem conter apenas exemplos sem segredos. Não use `git add -f` para contornar o `.gitignore`.
+
+Depois dessa revisão, você pode criar o commit local com `git commit -m "Finaliza versão de portfólio do Meu Norte"`. A publicação no GitHub fica sob sua decisão. Se qualquer segredo tiver sido publicado fora do histórico local examinado, revogue/rotacione o segredo no serviço correspondente; apenas removê-lo do arquivo atual não resolve a exposição.

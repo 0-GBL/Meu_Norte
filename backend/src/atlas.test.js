@@ -12,6 +12,7 @@ import * as models from './models.js'
 const uri = process.env.MONGODB_TEST_URI
 
 test('MongoDB: persistência, concorrência, módulos financeiros e autenticação', { skip: !uri }, async t => {
+  assert.match(uri, /^mongodb:\/\/(127\.0\.0\.1|localhost):/, 'Use npm run test:isolated; esta suíte não aceita Atlas ou outros servidores remotos.')
   const dbName = 'meu_norte_test_' + randomUUID().replaceAll('-', '')
   await mongoose.connect(uri, { dbName, serverSelectionTimeoutMS: 5000 })
   t.after(async () => {
@@ -328,6 +329,39 @@ test('MongoDB: persistência, concorrência, módulos financeiros e autenticaç�
   assert.equal(februaryReport.data.expenses, 4000)
   assert.equal(februaryReport.data.previous.expenses, 4000)
   assert.deepEqual(februaryReport.data.comparison.expenses, { value: 4000, difference: 0, percent: 0 })
+  assert.deepEqual([februaryReport.data.previous.from, februaryReport.data.previous.through], ['2025-01-01', '2025-01-31'])
+  const consecutive = await first('GET', '/reports?from=2025-02-01&through=2025-02-28&comparison=consecutive')
+  assert.deepEqual([consecutive.data.previous.from, consecutive.data.previous.through], ['2025-01-04', '2025-01-31'])
+  assert.equal((await first('GET', '/reports?from=2025-02-01&through=2025-02-28&comparison=invalid')).status, 400)
+
+  // Only the isolated test database is used by this opt-in integration suite.
+  const priorOperations = (await second('GET')).data
+  const priorOperationsReport = await second('GET', '/reports?from=2025-03-01&through=2025-03-31')
+  for (const operation of ['sale', 'retire']) {
+    const name = 'Informativo ' + operation
+    const created = await second('POST', '/assets', { name, kind: 'vehicle', acquired: 2000000,
+      acquiredOn: '2025-01-01', value: null, accountId: null, reviewOn: null })
+    const asset = created.data.assets.find(row => row.name === name)
+    const closed = await second('POST', '/assets/' + asset._id + '/operations', {
+      type: operation, mode: 'note', date: '2025-03-01', ...(operation === 'sale' && { amount: 1800000 }),
+    })
+    assert.equal(closed.status, 201)
+    const ended = closed.data.assets.find(row => row._id === asset._id)
+    assert.equal(ended.status, operation === 'sale' ? 'sold' : 'retired')
+    assert.equal(ended.endedOn, '2025-03-01')
+    assert.deepEqual(ended.valuations, [])
+    if (operation === 'sale') {
+      assert.equal(ended.sale.amount - ended.sale.cost, -200000)
+      assert.ok(!ended.sale.entryId)
+    }
+    assert.equal(closed.data.total, priorOperations.total)
+    assert.deepEqual(closed.data.entries, priorOperations.entries)
+  }
+  const afterOperations = await second('GET', '/reports?from=2025-03-01&through=2025-03-31')
+  assert.equal(afterOperations.data.position.evaluatedAssets, 0)
+  assert.equal(afterOperations.data.position.pendingAssets, 0)
+  assert.equal(afterOperations.data.income, priorOperationsReport.data.income)
+  assert.equal(afterOperations.data.cash, priorOperationsReport.data.cash)
 
   const monthly = await second('POST', '/reminders', { name: 'Recorrente', dueOn: '2025-01-31', frequency: 'monthly', leadDays: 3 })
   const recurringId = monthly.data.reminders.find(row => row.name === 'Recorrente')._id

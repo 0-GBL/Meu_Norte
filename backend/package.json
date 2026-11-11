@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "test:isolated": "node scripts/run-isolated.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -13,5 +14,8 @@
     "express": "^5.1.0",
     "mongoose": "^9.0.0",
     "nodemailer": "^10.5.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0"
   }
 }

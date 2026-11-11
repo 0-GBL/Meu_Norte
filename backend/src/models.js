@@ -14,7 +14,7 @@ const entry = new Schema({
   owner, type: String, description: String, amount: Number, date: String,
   accountId: Schema.Types.ObjectId, destinationId: Schema.Types.ObjectId,
   category: String, expenseKind: String, goalId: Schema.Types.ObjectId,
-  assetId: Schema.Types.ObjectId, assetOperation: String, cancelledAt: Date, cardId: Schema.Types.ObjectId, invoice: String,
+  assetId: Schema.Types.ObjectId, assetOperation: String, assetReceiptSource: String, cancelledAt: Date, cardId: Schema.Types.ObjectId, invoice: String,
   revisions: { type: [Schema.Types.Mixed], default: undefined },
 }, options)
 entry.index({ owner: 1, date: -1, createdAt: -1, _id: -1 })
@@ -55,11 +55,18 @@ const reminder = new Schema({
 reminder.index({ owner: 1, status: 1, dueOn: 1 })
 reminder.index({ owner: 1, kind: 1, linkId: 1 })
 
+const sale = new Schema({
+  date: String, amount: Number, entryId: Schema.Types.ObjectId, cost: Number, operationId: String,
+  expectedOn: String, cancelledAt: Date, cancellationReason: String,
+  history: { type: [Schema.Types.Mixed], default: undefined },
+}, { _id: false })
+
 const asset = new Schema({
   owner, name: String, kind: String, acquired: Number, accountId: Schema.Types.ObjectId, reviewOn: String,
   description: String, notes: String, acquiredOn: String, status: String, endedOn: String, deletedAt: Date,
   purchase: { date: String, amount: Number, entryId: Schema.Types.ObjectId },
-  sale: { date: String, amount: Number, entryId: Schema.Types.ObjectId, cost: Number },
+  sale,
+  saleHistory: { type: [sale], default: undefined },
 }, options)
 asset.index({ owner: 1, createdAt: 1 })
 asset.index({ owner: 1, accountId: 1, endedOn: 1 })
@@ -86,7 +93,9 @@ const accessToken = new Schema({
 accessToken.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
 const workspace = new Schema({ _id: String, revision: { type: Number, default: 0 } }, { versionKey: false })
-const receipt = new Schema({ _id: String, fingerprint: { type: String, required: true } }, { versionKey: false })
+const receipt = new Schema({ _id: String, fingerprint: { type: String, required: true },
+  mutation: { changed: Boolean, dateChanged: Boolean, reminderChanged: Boolean, message: String },
+}, { versionKey: false })
 
 export const Account = mongoose.model('Account', account)
 export const Entry = mongoose.model('Entry', entry)

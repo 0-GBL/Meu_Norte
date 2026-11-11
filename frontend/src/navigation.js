@@ -14,3 +14,11 @@ export const modules = [
 ]
 
 export const settings = { path: '/configuracoes', label: 'Configurações e ajuda', icon: Settings, description: 'Personalize a aparência e conheça os módulos do Meu Norte.' }
+
+// Sidebar labels are independent of the dashboard's approved shortcuts.
+const sidebarItem = (path, label) => ({ ...modules.find(item => item.path === path), label })
+export const sidebarLinks = [sidebarItem('/movimentacoes', 'Movimentações'), sidebarItem('/contas', 'Contas'), sidebarItem('/cartoes', 'Cartões')]
+export const sidebarGroups = [
+  { label: 'Planejar', items: [sidebarItem('/orcamentos', 'Orçamentos'), sidebarItem('/metas', 'Metas'), sidebarItem('/lembretes', 'Lembretes')] },
+  { label: 'Acompanhar', items: [sidebarItem('/patrimonio', 'Patrimônio'), sidebarItem('/relatorios', 'Relatórios')] },
+]
