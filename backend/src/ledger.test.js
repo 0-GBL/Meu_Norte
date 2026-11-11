@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
+import { MAX_MONEY_CENTS } from '../../shared/financialRules.mjs'
 import { accountBalances, accountInput, entryInput, RequestError } from './ledger.js'
 
 const accountId = 'aaaaaaaaaaaaaaaaaaaaaaaa'
@@ -31,4 +32,14 @@ test('validação rejeita decimais, datas inválidas, contas iguais e alteraçõ
     assert.throws(() => entryInput({ ...transfer, ...invalid }), RequestError)
   }
   assert.throws(() => accountInput({ name: 'Conta', kind: 'Corrente', archived: false, initialBalance: 1 }, true), RequestError)
+})
+
+test('valida os limites compartilhados sem perder centavos ou bloquear saldo inicial negativo', () => {
+  const account = { name: 'Conta', kind: 'Corrente' }
+  assert.equal(accountInput({ ...account, initialBalance: -MAX_MONEY_CENTS }).initialBalance, -MAX_MONEY_CENTS)
+  assert.throws(() => accountInput({ ...account, initialBalance: MAX_MONEY_CENTS + 1 }), RequestError)
+  const income = { ...base, type: 'income', category: 'Receita', amount: MAX_MONEY_CENTS }
+  assert.equal(entryInput(income).amount, MAX_MONEY_CENTS)
+  assert.throws(() => entryInput({ ...income, amount: -1 }), RequestError)
+  assert.throws(() => entryInput({ ...income, date: '0000-01-01' }), RequestError)
 })

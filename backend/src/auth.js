@@ -2,12 +2,13 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import express from 'express'
 import mongoose from 'mongoose'
-import { ResetToken, Session, User, Workspace } from './models.js'
-import { label, object, RequestError } from './ledger.js'
+import bcrypt from 'bcryptjs'
+import { ResetToken, Session, User } from './models.js'
+import { object, RequestError } from './ledger.js'
 
 const derive = promisify(scrypt)
 const scryptOptions = { N: 65536, r: 8, p: 1, maxmem: 96 * 1024 * 1024 }
-const fallbackHash = '0'.repeat(32) + ':' + '0'.repeat(128)
+const fallbackHash = bcrypt.hashSync(randomBytes(32).toString('hex'), 12)
 const sessionLifetime = 7 * 24 * 60 * 60 * 1000
 const resetLifetime = 30 * 60 * 1000
 const tokenFormat = /^[a-f0-9]{64}$/
@@ -15,25 +16,25 @@ const token = () => randomBytes(32).toString('hex')
 const hashToken = raw => createHash('sha256').update(raw).digest('hex')
 
 export function validatePassword(password) {
-  if (typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password) > 256) {
-    throw new RequestError(400, 'Use uma senha de pelo menos 12 caracteres e até 256 bytes.')
+  if (typeof password !== 'string' || password.length < 12 || Buffer.byteLength(password) > 72) {
+    throw new RequestError(400, 'Use uma senha de pelo menos 12 caracteres e até 72 bytes.')
   }
   return password
 }
 
 export async function hashPassword(password) {
-  const salt = randomBytes(16).toString('hex')
-  const key = await derive(password, salt, 64, scryptOptions)
-  return salt + ':' + key.toString('hex')
+  return bcrypt.hash(password, 12)
 }
 
 export async function checkPassword(password, hash = fallbackHash) {
+  if (/^\$2[aby]\$/.test(hash)) return Buffer.byteLength(password) <= 72 && bcrypt.compare(password, hash)
+  if (!/^[a-f0-9]{32}:[a-f0-9]{128}$/.test(hash)) return false
   const [salt, expected] = hash.split(':')
   const actual = await derive(password, salt, 64, scryptOptions)
   return timingSafeEqual(actual, Buffer.from(expected, 'hex'))
 }
 
-function emailInput(value) {
+export function emailInput(value) {
   if (typeof value !== 'string') throw new RequestError(400, 'Informe um e-mail válido.')
   const email = value.trim().toLowerCase()
   if (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(email)) {
@@ -66,12 +67,14 @@ function limiter() {
   }
 }
 
-export function createAuth({ origin, secureCookies, sendReset, localAccess = false }) {
+export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin = false }) {
   const router = express.Router()
   const limit = limiter()
   const cookieName = secureCookies ? '__Host-meunorte' : 'meunorte'
   const cookieOptions = { httpOnly: true, secure: secureCookies, sameSite: 'strict', path: '/' }
-  const visibleUser = user => ({ name: user.name, email: user.email })
+  const visibleUser = user => ({
+    name: user.name, email: user.email, role: user.role ?? 'user', mustChangePassword: Boolean(user.mustChangePassword),
+  })
   const rawCookie = req => req.get('cookie')?.split(';').map(value => value.trim())
     .find(value => value.startsWith(cookieName + '='))?.slice(cookieName.length + 1)
   const cookieId = req => {
@@ -84,7 +87,9 @@ export function createAuth({ origin, secureCookies, sendReset, localAccess = fal
     if (!key) return null
     const session = await Session.findOne({ _id: key, expiresAt: { $gt: new Date() } }).lean()
     if (!session) return null
-    return User.findOne({ _id: session.owner, sessionVersion: session.version }).select('name email').lean()
+    return User.findOne({ _id: session.owner, sessionVersion: session.version,
+      ...(!allowInitialLogin && { mustChangePassword: { $ne: true } }),
+    }).select('name email role ledgerOwner mustChangePassword sessionVersion').lean()
   }
 
   async function issue(req, res, user) {
@@ -109,38 +114,41 @@ export function createAuth({ origin, secureCookies, sendReset, localAccess = fal
 
   router.get('/session', async (req, res) => {
     const user = await getUser(req)
-    res.json({ user: user && visibleUser(user), recovery: Boolean(sendReset), localAccess })
-  })
-
-  router.post('/register', async (req, res) => {
-    object(req.body, ['name', 'email', 'password'])
-    const email = emailInput(req.body.email)
-    limit('register:' + hashToken(email), 5)
-    const name = label(req.body.name, 'um nome')
-    const passwordHash = await hashPassword(validatePassword(req.body.password))
-    let user
-    try {
-      user = await mongoose.connection.transaction(async session => {
-        const [created] = await User.create([{ email, name, passwordHash }], { session })
-        await Workspace.create([{ _id: String(created._id), revision: 0 }], { session })
-        return created
-      })
-    } catch (error) {
-      if (error.code === 11000) throw new RequestError(409, 'Não foi possível cadastrar este e-mail. Tente entrar ou recuperar o acesso.')
-      throw error
-    }
-    await issue(req, res, user)
+    res.json({ user: user && visibleUser(user), recovery: Boolean(sendReset) })
   })
 
   router.post('/login', async (req, res) => {
     object(req.body, ['email', 'password'])
-    const email = emailInput(req.body.email)
-    const password = validatePassword(req.body.password)
+    const invalid = new RequestError(401, 'E-mail ou senha incorretos.')
+    let email
+    try { email = emailInput(req.body.email) } catch { throw invalid }
+    const password = req.body.password
+    if (typeof password !== 'string' || !password || Buffer.byteLength(password) > 256) throw invalid
     limit('login:' + hashToken(email), 8)
     const user = await User.findOne({ email }).lean()
     const matches = await checkPassword(password, user?.passwordHash)
-    if (!user || !matches) throw new RequestError(401, 'E-mail ou senha incorretos.')
+    if (!user || !matches || (user.mustChangePassword && !allowInitialLogin)) throw invalid
     await issue(req, res, user)
+  })
+
+  router.post('/password', async (req, res) => {
+    const authenticated = await getUser(req)
+    if (!authenticated) throw new RequestError(401, 'Entre novamente para alterar a senha.')
+    object(req.body, ['currentPassword', 'newPassword'])
+    limit('password:' + authenticated._id, 8)
+    const current = req.body.currentPassword
+    const password = validatePassword(req.body.newPassword)
+    const user = await User.findOne({ _id: authenticated._id, sessionVersion: authenticated.sessionVersion }).lean()
+    if (!user || typeof current !== 'string' || Buffer.byteLength(current) > 256 || !await checkPassword(current, user.passwordHash)) {
+      throw new RequestError(400, 'A senha atual não confere.')
+    }
+    if (current === password) throw new RequestError(400, 'Escolha uma senha diferente da atual.')
+    const passwordHash = await hashPassword(password)
+    const updated = await User.findOneAndUpdate({ _id: user._id, sessionVersion: user.sessionVersion }, {
+      $set: { passwordHash, mustChangePassword: false }, $inc: { sessionVersion: 1 },
+    }, { returnDocument: 'after' }).lean()
+    if (!updated) throw new RequestError(409, 'A sessão mudou. Entre novamente.')
+    await issue(req, res, updated)
   })
 
   router.post('/logout', async (req, res) => {
@@ -156,7 +164,7 @@ export function createAuth({ origin, secureCookies, sendReset, localAccess = fal
     limit('reset:' + hashToken(email), 4)
     const user = await User.findOne({ email }).lean()
     res.json({ message: 'Se houver uma conta com esse e-mail, você receberá um link de recuperação.' })
-    if (!user) return
+    if (!user || user.mustChangePassword) return
     try {
       const raw = token()
       await ResetToken.create({
@@ -181,7 +189,7 @@ export function createAuth({ origin, secureCookies, sendReset, localAccess = fal
     await mongoose.connection.transaction(async session => {
       const reset = await ResetToken.findOneAndDelete(filter).session(session)
       if (!reset || reset.expiresAt <= new Date()) throw new RequestError(400, 'O link de recuperação é inválido ou expirou.')
-      const result = await User.updateOne({ _id: reset.owner, sessionVersion: reset.version },
+      const result = await User.updateOne({ _id: reset.owner, sessionVersion: reset.version, mustChangePassword: { $ne: true } },
         { $set: { passwordHash }, $inc: { sessionVersion: 1 } }, { session })
       if (!result.modifiedCount) throw new RequestError(400, 'O link de recuperação é inválido ou expirou.')
     })

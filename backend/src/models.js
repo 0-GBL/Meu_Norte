@@ -6,19 +6,23 @@ const options = { timestamps: true, versionKey: false }
 
 const account = new Schema({
   owner, name: String, kind: String, initialBalance: Number,
-  archived: { type: Boolean, default: false },
+  archived: { type: Boolean, default: false }, deletedAt: Date,
 }, options)
 account.index({ owner: 1, createdAt: 1 })
 
 const entry = new Schema({
   owner, type: String, description: String, amount: Number, date: String,
   accountId: Schema.Types.ObjectId, destinationId: Schema.Types.ObjectId,
-  category: String, expenseKind: String,
+  category: String, expenseKind: String, goalId: Schema.Types.ObjectId,
+  assetId: Schema.Types.ObjectId, assetOperation: String, cancelledAt: Date, cardId: Schema.Types.ObjectId, invoice: String,
+  revisions: { type: [Schema.Types.Mixed], default: undefined },
 }, options)
 entry.index({ owner: 1, date: -1, createdAt: -1, _id: -1 })
+entry.index({ owner: 1, accountId: 1, date: 1 })
+entry.index({ owner: 1, destinationId: 1, date: 1 })
 
 const card = new Schema({
-  owner, name: String, limit: Number, close: Number, due: Number, archived: Boolean,
+  owner, name: String, institution: String, limit: Number, close: Number, due: Number, archived: Boolean, deletedAt: Date,
 }, options)
 card.index({ owner: 1, createdAt: 1 })
 
@@ -32,32 +36,49 @@ cardEvent.index({ owner: 1, cardId: 1, date: 1, _id: 1 })
 const budget = new Schema({ owner, month: String, category: String, categoryKey: String, limit: Number }, options)
 budget.index({ owner: 1, month: -1, categoryKey: 1 }, { unique: true })
 
-const goal = new Schema({ owner, name: String, target: Number, monthly: Number, status: String }, options)
+const goal = new Schema({ owner, name: String, description: String, deadline: String, target: Number, monthly: Number, status: String, deletedAt: Date }, options)
 goal.index({ owner: 1, createdAt: 1 })
 
-const goalEvent = new Schema({ owner, goalId: Schema.Types.ObjectId, amount: Number, date: String }, options)
+const goalEvent = new Schema({
+  owner, goalId: Schema.Types.ObjectId, amount: Number, date: String,
+  accountId: Schema.Types.ObjectId, destinationId: Schema.Types.ObjectId,
+}, options)
 goalEvent.index({ owner: 1, goalId: 1, date: -1, _id: -1 })
 
 const reminder = new Schema({
   owner, name: String, dueOn: String, frequency: String, amount: Number, anchor: Number,
   snoozedUntil: String, status: String, lastConfirmedOn: String,
+  description: String, kind: String, time: String, leadDays: Number, linkId: Schema.Types.ObjectId,
+  readOccurrence: String, cardCycle: String, deletedAt: Date,
+  history: [{ _id: false, occurrence: String, action: String, recordedAt: Date }],
 }, options)
 reminder.index({ owner: 1, status: 1, dueOn: 1 })
+reminder.index({ owner: 1, kind: 1, linkId: 1 })
 
 const asset = new Schema({
   owner, name: String, kind: String, acquired: Number, accountId: Schema.Types.ObjectId, reviewOn: String,
+  description: String, notes: String, acquiredOn: String, status: String, endedOn: String, deletedAt: Date,
+  purchase: { date: String, amount: Number, entryId: Schema.Types.ObjectId },
+  sale: { date: String, amount: Number, entryId: Schema.Types.ObjectId, cost: Number },
 }, options)
 asset.index({ owner: 1, createdAt: 1 })
+asset.index({ owner: 1, accountId: 1, endedOn: 1 })
 
-const valuation = new Schema({ owner, assetId: Schema.Types.ObjectId, value: Number, date: String }, options)
+const valuation = new Schema({ owner, assetId: Schema.Types.ObjectId, value: Number, date: String, notes: String }, options)
 valuation.index({ owner: 1, assetId: 1, date: -1, _id: -1 })
+valuation.index({ owner: 1, date: -1 })
 
 const user = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   sessionVersion: { type: Number, default: 0 },
+  role: { type: String, enum: ['admin', 'user'], default: 'user' },
+  ledgerOwner: String,
+  mustChangePassword: { type: Boolean, default: false },
 }, options)
+user.index({ role: 1 }, { unique: true, partialFilterExpression: { role: 'admin' } })
+user.index({ ledgerOwner: 1 }, { unique: true, partialFilterExpression: { ledgerOwner: { $type: 'string' } } })
 
 const accessToken = new Schema({
   _id: String, owner: Schema.Types.ObjectId, version: Number, expiresAt: Date,

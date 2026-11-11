@@ -2,11 +2,14 @@ import 'dotenv/config'
 import mongoose from 'mongoose'
 import nodemailer from 'nodemailer'
 import { createApp } from './app.js'
+import { bootstrapAdmin } from './bootstrapAdmin.js'
+import { RequestError } from './ledger.js'
 import * as models from './models.js'
 
 const {
-  MONGODB_URI, LEDGER_ACCESS_KEY, LEDGER_OWNER = 'local', CLIENT_ORIGIN = 'http://localhost:5173',
+  MONGODB_URI, CLIENT_ORIGIN = 'http://localhost:5173',
   PORT = '3001', NODE_ENV, SMTP_HOST, SMTP_PORT = '587', SMTP_USER, SMTP_PASS, SMTP_FROM,
+  INITIAL_ADMIN_NAME, INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD, INITIAL_ADMIN_LEGACY_OWNER,
 } = process.env
 const configurationError = 'Confira a configuração em backend/.env.'
 
@@ -34,10 +37,11 @@ async function start() {
   try { origin = new URL(CLIENT_ORIGIN) }
   catch { throw new Error(configurationError) }
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
+  const allowInitialLogin = local && (!NODE_ENV || NODE_ENV === 'development')
+  const initialAdmin = { name: INITIAL_ADMIN_NAME, email: INITIAL_ADMIN_EMAIL, password: INITIAL_ADMIN_PASSWORD, legacyOwner: INITIAL_ADMIN_LEGACY_OWNER }
   if (!MONGODB_URI || origin.origin !== CLIENT_ORIGIN ||
     (origin.protocol !== 'https:' && (production || !local || origin.protocol !== 'http:')) ||
-    (LEDGER_ACCESS_KEY && (production || !local || !/^[a-f\d]{64}$/i.test(LEDGER_ACCESS_KEY))) ||
-    !/^[\w-]{1,64}$/.test(LEDGER_OWNER) || /^[a-f\d]{24}$/i.test(LEDGER_OWNER) ||
+    (!allowInitialLogin && Object.values(initialAdmin).some(Boolean)) ||
     !/^\d+$/.test(PORT) || Number(PORT) < 1 || Number(PORT) > 65535) {
     throw new Error(configurationError)
   }
@@ -45,12 +49,9 @@ async function start() {
   const sendReset = mailer()
   await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
   await Promise.all(Object.values(models).map(model => model.init()))
-  if (LEDGER_ACCESS_KEY) {
-    await models.Workspace.updateOne({ _id: LEDGER_OWNER }, { $setOnInsert: { revision: 0 } }, { upsert: true })
-  }
+  if (allowInitialLogin) await bootstrapAdmin(initialAdmin)
   const app = createApp({
-    token: LEDGER_ACCESS_KEY, owner: LEDGER_OWNER, origin: CLIENT_ORIGIN,
-    secureCookies: origin.protocol === 'https:', sendReset,
+    origin: CLIENT_ORIGIN, secureCookies: origin.protocol === 'https:', sendReset, allowInitialLogin,
   })
   app.listen(Number(PORT), '127.0.0.1', error => {
     if (error) {
@@ -62,6 +63,7 @@ async function start() {
 }
 
 start().catch(error => {
-  console.error(error.message === configurationError ? configurationError : 'Não foi possível iniciar a API: ' + error.name)
+  console.error(error instanceof RequestError || error.message === configurationError
+    ? error.message : 'Não foi possível iniciar a API: ' + error.name)
   process.exit(1)
 })

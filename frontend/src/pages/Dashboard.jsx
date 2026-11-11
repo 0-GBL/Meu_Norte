@@ -1,10 +1,9 @@
 import { ArrowDownLeft, ArrowRight, ArrowUpRight, Bell, CalendarDays, Compass, Flag, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { modules } from '../navigation.js'
-import { accounts, transactions, goals, reminders, money, dateLabel, totalBalance, progress } from '../demo/finance.js'
+import { money, dateLabel, localDay, progress } from '../ledgerFormat.js'
 import { ProgressBar } from '../components/Details.jsx'
 import { useLedger } from '../LedgerContext.jsx'
-import { localDay } from '../ledgerFormat.js'
 import { reminderItems } from './RecordsPages.jsx'
 
 function QuickLink({ item }) {
@@ -19,15 +18,15 @@ function QuickLink({ item }) {
 
 export default function Dashboard() {
   const { data } = useLedger()
-  const goal = data ? data.goals.find(row => row.status === 'active') : goals[0]
-  const upcoming = data ? reminderItems(data) : reminders
-  const latest = data ? data.entries.slice(0, 2).map(entry => ({
+  const goal = data.goals.find(row => row.status === 'active' && !row.completed)
+  const upcoming = reminderItems(data)
+  const latest = data.entries.slice(0, 2).map(entry => ({
     id: entry._id, name: entry.description, date: entry.date,
     category: entry.category ?? (entry.type === 'cardPayment' ? 'Pagamento de fatura' : 'Transferência'),
     amount: ['expense', 'cardPayment'].includes(entry.type) ? -entry.amount : entry.amount,
     isIncome: entry.type === 'income',
-  })) : transactions.slice(0, 2).map(row => ({ ...row, isIncome: row.type === 'Receita' }))
-  const month = data ? new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(localDay())) : 'Novembro de 2026'
+  }))
+  const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(localDay()))
   return <>
     <div className="page-intro">
       <div><p className="eyebrow">SEU PANORAMA FINANCEIRO</p><h1>Visão geral</h1><p>Acompanhe suas finanças e planeje seus próximos passos.</p></div>
@@ -38,7 +37,7 @@ export default function Dashboard() {
       <Compass className="balance-compass" aria-hidden="true" strokeWidth={0.36} />
       <div className="balance-content">
         <div className="balance-label" id="balance-title"><span><Wallet size={19} /></span> Saldo total</div>
-        <p className="balance-value">{money(data?.total ?? totalBalance(accounts))}</p>
+        <p className="balance-value">{money(data.total)}</p>
         <p className="balance-note">Soma dos saldos das suas contas financeiras</p>
       </div>
       <Link to="/contas" className="balance-link">Ver contas <ArrowRight size={16} /></Link>

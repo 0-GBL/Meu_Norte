@@ -1,14 +1,13 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 const LedgerContext = createContext(null)
-const base = import.meta.env.VITE_LEDGER_API_URL
-const api = base?.replace(/\/$/, '')
+const api = (import.meta.env.VITE_LEDGER_API_URL || '/').replace(/\/$/, '')
 
-async function request(path, { key, idempotencyKey, method = 'GET', body, signal } = {}) {
+async function request(path, { idempotencyKey, method = 'GET', body, signal } = {}) {
   const response = await fetch(api + '/api' + path, {
     method, signal, credentials: 'include', redirect: 'error',
     headers: {
-      ...(key && { Authorization: 'Bearer ' + key }),
       ...(body !== undefined && { 'Content-Type': 'application/json' }),
       ...(idempotencyKey && { 'Idempotency-Key': idempotencyKey }),
     },
@@ -24,18 +23,34 @@ async function request(path, { key, idempotencyKey, method = 'GET', body, signal
 }
 
 export function LedgerProvider({ children }) {
-  const enabled = Boolean(base)
-  const [key, setKey] = useState('')
+  const { key: locationKey } = useLocation()
   const [data, setData] = useState(null)
   const [user, setUser] = useState(null)
-  const [auth, setAuth] = useState({ ready: !enabled, recovery: false, localAccess: false })
+  const [auth, setAuth] = useState({ ready: false, recovery: false })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [feedback, setFeedback] = useState(null)
   const active = useRef(false)
   const pendingCreates = useRef(new Map())
+  const readLedger = useCallback(async (path, signal) => {
+    try { return await request('/ledger' + path, { signal }) }
+    catch (error) {
+      if (error.status === 401) {
+        pendingCreates.current.clear()
+        setUser(null)
+        setData(null)
+      }
+      throw error
+    }
+  }, [])
 
   useEffect(() => {
-    if (!enabled) return
+    if (!feedback || feedback.pending) return
+    const timer = setTimeout(() => setFeedback(null), 4500)
+    return () => clearTimeout(timer)
+  }, [feedback])
+
+  useEffect(() => {
     const controller = new AbortController()
     const { signal } = controller
     async function loadSession() {
@@ -43,24 +58,24 @@ export function LedgerProvider({ children }) {
         const session = await request('/auth/session', { signal })
         if (signal.aborted) return
         setUser(session.user)
-        setAuth({ ready: true, recovery: session.recovery, localAccess: session.localAccess })
-        if (session.user) {
+        setAuth({ ready: true, recovery: session.recovery })
+        if (session.user && !session.user.mustChangePassword) {
           const ledger = await request('/ledger', { signal })
           if (!signal.aborted) setData(ledger)
         }
-      } catch {
+      } catch (error) {
         if (signal.aborted) return
         setAuth(current => ({ ...current, ready: true }))
-        setError('Não foi possível carregar a sessão. Confira se o serviço está disponível.')
+        if (error.status === 401) { setUser(null); setData(null) }
+        else setError('Não foi possível carregar a sessão. Confira se o serviço está disponível.')
       }
     }
     void loadSession()
     return () => controller.abort()
-  }, [enabled])
+  }, [])
 
   function clearSession() {
     pendingCreates.current.clear()
-    setKey('')
     setUser(null)
     setData(null)
   }
@@ -81,28 +96,29 @@ export function LedgerProvider({ children }) {
     }
   }
 
-  const connect = access => run(async () => {
-    setData(await request('/ledger', { key: access }))
-    setKey(access)
-    return true
-  })
-
   const authenticate = (action, body) => run(async () => {
-    const result = await request('/auth/' + action, { method: 'POST', body })
+    let result
+    try { result = await request('/auth/' + action, { method: 'POST', body }) }
+    catch (error) {
+      if (action === 'password' && error.status === 401) clearSession()
+      throw error
+    }
     if (action === 'forgot') return result.message
     if (action === 'reset' || action === 'logout') {
       clearSession()
       return true
     }
-    clearSession()
+    if (action === 'login') clearSession()
     setUser(result.user)
-    setData(await request('/ledger'))
+    if (!result.user.mustChangePassword && (action === 'login' || user?.mustChangePassword)) {
+      setData(await request('/ledger'))
+    }
     return true
   })
 
   const refresh = () => run(async () => {
     try {
-      setData(await request('/ledger', { key }))
+      setData(await request('/ledger'))
     } catch (error) {
       if (error.status === 401) clearSession()
       throw error
@@ -117,10 +133,13 @@ export function LedgerProvider({ children }) {
       idempotencyKey = pendingCreates.current.get(fingerprint) ?? crypto.randomUUID()
       pendingCreates.current.set(fingerprint, idempotencyKey)
     }
+    setFeedback({ locationKey, pending: true, text: 'Salvando…' })
     try {
-      setData(await request('/ledger' + path, { key, method, body, idempotencyKey }))
+      setData(await request('/ledger' + path, { method, body, idempotencyKey }))
       if (idempotencyKey) pendingCreates.current.delete(fingerprint)
+      setFeedback({ locationKey, text: method === 'DELETE' ? 'Registro excluído.' : 'Alteração salva.' })
     } catch (error) {
+      setFeedback(null)
       if (error.status === 401) clearSession()
       else if (error.status >= 400 && error.status < 500 && idempotencyKey) pendingCreates.current.delete(fingerprint)
       throw error
@@ -128,17 +147,9 @@ export function LedgerProvider({ children }) {
     return true
   })
 
-  const disconnect = () => {
-    if (active.current) return
-    pendingCreates.current.clear()
-    setKey('')
-    setData(null)
-    setError('')
-  }
-
   return <LedgerContext.Provider value={{
-    enabled, data, user, auth, busy, error, connect, disconnect, mutate, authenticate, refresh,
-    localConnected: Boolean(key),
+    data, user, auth, busy, error, mutate, authenticate, refresh, readLedger,
+    feedback: feedback?.locationKey === locationKey ? feedback.text : '',
   }}>{children}</LedgerContext.Provider>
 }
 

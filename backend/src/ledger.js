@@ -1,3 +1,5 @@
+import { MAX_MONEY_CENTS, validCents, validDate } from '../../shared/financialRules.mjs'
+
 export class RequestError extends Error {
   constructor(status, message) {
     super(message)
@@ -20,8 +22,9 @@ export function label(value, field) {
 }
 
 export function cents(value, allowNegative = false) {
-  if (!Number.isSafeInteger(value) || Math.abs(value) > 99999999999 || (!allowNegative && value <= 0)) {
-    invalid('Informe um valor válido em centavos.')
+  if (!validCents(value, { negative: allowNegative, zero: allowNegative })) {
+    const maximum = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(MAX_MONEY_CENTS / 100)
+    invalid('Informe um valor ' + (allowNegative ? 'válido' : 'positivo') + ' em centavos, até ' + maximum + '.')
   }
   return value
 }
@@ -32,9 +35,7 @@ export function id(value) {
 }
 
 export function day(value) {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) invalid('Informe uma data válida.')
-  const date = new Date(value + 'T00:00:00Z')
-  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) invalid('Informe uma data válida.')
+  if (!validDate(value)) invalid('Informe uma data válida.')
   return value
 }
 

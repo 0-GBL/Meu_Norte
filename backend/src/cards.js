@@ -17,10 +17,11 @@ function integer(value, max, message) {
 }
 
 export function cardInput(input) {
-  object(input, ['name', 'limit', 'close', 'due', 'archived'])
+  object(input, ['name', 'institution', 'limit', 'close', 'due', 'archived'])
   if (input.archived !== undefined && typeof input.archived !== 'boolean') throw new RequestError(400, 'Situação inválida.')
   return {
     name: label(input.name, 'um nome'),
+    ...(input.institution !== undefined && { institution: input.institution === '' ? '' : label(input.institution, 'uma instituição') }),
     limit: cents(input.limit),
     close: integer(input.close, 31, 'Informe um dia de fechamento entre 1 e 31.'),
     due: integer(input.due, 31, 'Informe um dia de vencimento entre 1 e 31.'),
@@ -72,6 +73,20 @@ export function closingMonth(date, close) {
   return date <= cycleDay(month, close) ? month : shiftMonth(month, 1)
 }
 
+function cycleDates(card, month) {
+  const closedOn = cycleDay(month, card.close)
+  const sameMonthDue = cycleDay(month, card.due)
+  const dueOn = sameMonthDue > closedOn ? sameMonthDue : cycleDay(shiftMonth(month, 1), card.due)
+  return { closedOn, dueOn }
+}
+
+export function nextCardDates(card, currentDay) {
+  const month = closingMonth(currentDay, card.close)
+  const current = cycleDates(card, month)
+  const previous = cycleDates(card, shiftMonth(month, -1))
+  return { nextClose: current.closedOn, nextDue: previous.dueOn >= currentDay ? previous.dueOn : current.dueOn }
+}
+
 function amounts(card, events) {
   const cycles = new Map()
   const purchases = new Map(events.filter(row => row.type === 'purchase').map(row => [String(row._id), row]))
@@ -102,23 +117,23 @@ function amounts(card, events) {
 
 export function cardSummary(card, events, currentDay) {
   const { cycles, spending } = amounts(card, events)
+  const currentCycle = closingMonth(currentDay, card.close)
   let credit = 0
   let used = 0
   const invoices = cycles.map(cycle => {
-    const closedOn = cycleDay(cycle.month, card.close)
-    const dueMonth = card.due <= card.close || cycleDay(cycle.month, card.due) <= closedOn
-      ? shiftMonth(cycle.month, 1) : cycle.month
+    const { closedOn, dueOn } = cycleDates(card, cycle.month)
     const net = safeAmount(cycle.charges - cycle.refunds - cycle.paid)
     const balance = safeAmount(net - credit)
     const creditApplied = Math.min(credit, Math.max(0, net))
     credit = Math.max(0, -balance)
     const remaining = Math.max(0, balance)
     used = safeAmount(used + remaining)
-    const dueOn = cycleDay(dueMonth, card.due)
-    const status = currentDay <= closedOn ? 'Aberta' : remaining === 0 ? 'Quitada' : currentDay > dueOn ? 'Vencida' : 'Fechada'
+    const status = cycle.month > currentCycle ? 'Futura' :
+      remaining === 0 && (cycle.paid > 0 || currentDay > closedOn) ? 'Quitada' :
+      currentDay <= closedOn ? 'Aberta' : currentDay > dueOn ? 'Vencida' : 'Fechada'
     return { ...cycle, creditApplied, remaining, closedOn, dueOn, status }
   })
-  return { ...card, invoices, events, spending, credit, used, available: Math.max(0, card.limit - used) }
+  return { ...card, ...nextCardDates(card, currentDay), invoices, events, spending, credit, used, available: Math.max(0, card.limit - used) }
 }
 
 export function validateCardEvent(card, events, event, currentDay) {
@@ -126,6 +141,10 @@ export function validateCardEvent(card, events, event, currentDay) {
   if (card.archived && ['purchase', 'fee'].includes(event.type)) throw new RequestError(400, 'Reative o cartão para adicionar novos gastos.')
   if (event.type === 'purchase' && event.amount > summary.available) throw new RequestError(400, 'O valor ultrapassa o limite disponível.')
   if (event.type === 'payment') {
+    if (events.some(row => row.type === 'payment' && row.invoice === event.invoice && row.date === event.date &&
+      row.amount === event.amount && String(row.accountId) === event.accountId)) {
+      throw new RequestError(409, 'Já existe um pagamento com a mesma fatura, conta, data e valor.')
+    }
     const invoice = summary.invoices.find(row => row.month === event.invoice)
     const onDate = cardSummary(card, events.filter(row => row.date <= event.date), event.date)
     const dueOnDate = onDate.invoices.find(row => row.month === event.invoice)?.remaining ?? 0

@@ -1,9 +1,26 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
+import { scryptSync } from 'node:crypto'
 import { budgetInput, budgetSummaries, goalSummary, spendingRecords } from './planning.js'
 import { nextReminder, reminderDue, reminderInput } from './records.js'
 import { reportSummary } from './reports.js'
 import { checkPassword, hashPassword, validatePassword } from './auth.js'
+
+test('preserva a autenticação de uma senha longa armazenada antes do bcrypt', async () => {
+  const password = 'é'.repeat(45)
+  const salt = 'a'.repeat(32)
+  const key = scryptSync(password, salt, 64, { N: 65536, r: 8, p: 1, maxmem: 96 * 1024 * 1024 })
+  assert.equal(await checkPassword(password, salt + ':' + key.toString('hex')), true)
+  assert.throws(() => validatePassword(password))
+})
+
+test('recorrência anual retorna ao dia 29 em ano bissexto', () => {
+  const reminder = reminderInput({ name: 'Anual', dueOn: '2024-02-29', frequency: 'yearly' })
+  for (const expected of ['2025-02-28', '2026-02-28', '2027-02-28', '2028-02-29']) {
+    assert.equal(nextReminder(reminder), expected)
+    reminder.dueOn = expected
+  }
+})
 
 test('orçamentos agregam lançamentos e parcelas sem somar pagamentos ou transferências', () => {
   const entries = [
