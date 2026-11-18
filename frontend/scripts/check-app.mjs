@@ -1,3 +1,4 @@
+import { formatMoney, toCents } from '../src/ledgerFormat.js'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { readFile, mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -62,7 +63,7 @@ try {
   await send('Runtime.enable'); await send('Page.enable'); await send('Emulation.setTimezoneOverride', { timezoneId: 'America/Sao_Paulo' })
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 900, deviceScaleFactor: 1, mobile: true })
   const navigate = async path => { const before = loads; await send('Page.navigate', { url: origin + path }); await eventually(async () => loads > before); await eventually(() => evaluate(`location.pathname===${JSON.stringify(path.split('?')[0])} && Boolean(document.querySelector('h1')) && (location.pathname==='/entrar'||location.pathname==='/perfil'||Boolean(document.querySelector('.module-page,.reports-page,.balance-value')))`)) }
-  const fill = (selector, value) => evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}))})()`)
+  const fill = (selector, value) => evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,el.hasAttribute('data-currency-input')?${JSON.stringify(formatMoney(toCents(value)))}:${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}))})()`)
   const choose = (selector, value) => evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change',{bubbles:true}))})()`)
   const click = (text, scope = 'document') => evaluate(`(()=>{const root=${scope === 'document' ? 'document' : `document.querySelector(${JSON.stringify(scope)})`};const el=Array.from(root.querySelectorAll('button,a,summary')).find(el=>el.checkVisibility()&&(el.textContent.trim()===${JSON.stringify(text)}||el.childNodes[0]?.textContent.trim()===${JSON.stringify(text)}));if(!el)throw Error('Controle ausente: '+${JSON.stringify(text)});el.focus();el.click()})()`)
   const closed = () => eventually(() => evaluate('!document.querySelector("dialog[open]")'))

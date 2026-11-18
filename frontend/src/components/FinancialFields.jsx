@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { CalendarDays, ChevronDown } from 'lucide-react'
 import { MAX_MONEY_CENTS, validCents } from '../../../shared/financialRules.mjs'
-import { dateMessage, editDate, formatDate, formatMoney, moneyDraft, parseDate, toCents } from '../ledgerFormat.js'
+import { dateMessage, editDate, formatDate, formatMoney, parseDate, toCents } from '../ledgerFormat.js'
 import DateCalendar from './DateCalendar.jsx'
+import CurrencyInput from './CurrencyInput.jsx'
 
 function useReset(input, reset) {
   useEffect(() => {
@@ -17,15 +18,13 @@ export function MoneyField({ label, name, defaultValue = '', required, negative 
   const input = useRef(null)
   const [error, setError] = useState('')
   const initial = defaultValue === '' || defaultValue == null ? '' : formatMoney(toCents(String(defaultValue)) ?? 0)
-  const last = useRef(initial)
 
   useReset(input, () => {
-    last.current = initial
     input.current.setCustomValidity('')
     setError('')
   })
 
-  function validate(event, format = false) {
+  function validate(event) {
     const field = event.currentTarget
     const value = field.value.trim()
     const amount = toCents(value)
@@ -37,42 +36,14 @@ export function MoneyField({ label, name, defaultValue = '', required, negative 
         : ''
     field.setCustomValidity(message)
     setError(message)
-    if (format && !message && value) {
-      field.value = formatMoney(amount)
-      last.current = field.value
-    }
-  }
-
-  function change(event) {
-    const field = event.currentTarget
-    const previous = last.current
-    const draft = moneyDraft(field.value, negative)
-    const next = draft ?? previous
-    if (next !== field.value) {
-      const removed = Math.max(0, field.value.length - next.length)
-      const position = Math.max(0, (field.selectionStart ?? field.value.length) - removed)
-      field.value = next
-      field.setSelectionRange(position, position)
-    }
-    last.current = next
-    validate(event)
-  }
-
-  function edit(event) {
-    const field = event.currentTarget
-    if (!field.value.includes('R$')) return
-    const plain = value => value.replace(/R\$\s*/g, '').replaceAll('.', '')
-    const position = plain(field.value.slice(0, field.selectionStart ?? field.value.length)).length
-    field.value = plain(field.value)
-    field.setSelectionRange(position, position)
-    last.current = field.value
   }
 
   return <div className="form-field">
     <label htmlFor={id}>{label}{!required && <span className="field-optional"> (opcional)</span>}</label>
-    <input id={id} ref={input} name={name} inputMode="decimal" placeholder="R$ 0,00" maxLength={24}
-      required={required} defaultValue={initial} aria-invalid={Boolean(error)} aria-describedby={error ? id + '-error' : undefined}
-      onFocus={edit} onChange={change} onBlur={event => validate(event, true)} onInvalid={event => validate(event)} />
+    <CurrencyInput id={id} inputRef={input} name={name} negative={negative} defaultValue={initial}
+      required={required} aria-invalid={Boolean(error)} aria-describedby={id + '-hint' + (error ? ' ' + id + '-error' : '')}
+      onValueChange={field => validate({ currentTarget: field })} onBlur={validate} onInvalid={validate} />
+    <span id={id + '-hint'} className="sr-only">Digite somente números, começando pelos centavos. {negative && 'Use menos para alternar o sinal.'}</span>
     {error && <small id={id + '-error'} className="field-error" aria-live="polite">{error}</small>}
   </div>
 }

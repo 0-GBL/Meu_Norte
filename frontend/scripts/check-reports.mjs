@@ -1,3 +1,4 @@
+import { formatMoney, toCents } from '../src/ledgerFormat.js'
 import { spawn } from 'node:child_process'
 import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -184,7 +185,7 @@ try{
  await eventually(()=>evalIn('document.querySelectorAll(".report-empty").length >= 3'))
  const click=async text=>evalIn(`Array.from(document.querySelectorAll('dialog button, dialog summary')).find(el=>el.textContent.trim()===${JSON.stringify(text)} || el.childNodes[0]?.textContent.trim()===${JSON.stringify(text)}).click()`)
  const close=async()=>{await click('Fechar painel');await eventually(()=>evalIn('!document.querySelector("dialog")'))}
- const fill=async(selector,value)=>evalIn(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}));})()`)
+ const fill=async(selector,value)=>evalIn(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,el.hasAttribute('data-currency-input')?${JSON.stringify(formatMoney(toCents(value)))}:${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}));})()`)
  const choose=async(selector,value)=>evalIn(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change',{bubbles:true}));})()`)
  const manage=async id=>{await evalIn(`(()=>{const el=document.getElementById(${JSON.stringify(id)}).querySelector('button');el.focus();el.click()})()`);await eventually(()=>evalIn('Boolean(document.querySelector("dialog[open]"))'))}
  const visible=async selector=>evalIn(`Array.from(document.querySelectorAll(${JSON.stringify(selector)})).filter(el=>el.checkVisibility()).length`)

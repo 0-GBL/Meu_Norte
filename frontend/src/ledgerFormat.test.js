@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { dateMessage, editDate, formatDate, formatMoney, maskDate, moneyDraft, parseDate, progress, toCents } from './ledgerFormat.js'
+import { dateMessage, editDate, formatDate, formatMoney, maskDate, parseDate, progress, toCents } from './ledgerFormat.js'
 
 test('progresso de metas preserva percentuais acima do alvo e trata alvo zero', () => {
   assert.equal(progress(6500, 10000), 65)
@@ -54,11 +54,4 @@ test('indica erros cedo e permite manter datas históricas já registradas', () 
   assert.match(dateMessage('29/02/', { complete: true }), /Complete/)
   assert.match(dateMessage('01/01/1890'), /ano/)
   assert.equal(dateMessage('01/01/1890', { original: '1890-01-01' }), '')
-})
-
-test('filtra digitação e preserva valores colados em formato brasileiro', () => {
-  assert.equal(moneyDraft('R$ 1.234,56', false), '1.234,56')
-  assert.equal(moneyDraft('1234,', false), '1234,')
-  for (const input of ['12a', '12,345', '1234567890', '-12,50']) assert.equal(moneyDraft(input, false), null)
-  assert.equal(moneyDraft('-12,50', true), '-12,50')
 })

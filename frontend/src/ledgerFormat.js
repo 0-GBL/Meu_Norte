@@ -68,19 +68,6 @@ export function dateMessage(value, { required, min, max, complete, original } = 
   return ''
 }
 
-export function moneyDraft(value, negative) {
-  const raw = value.trim().replace(/^(-?)R\$\s*/i, '$1')
-  if (raw === '' || (raw === '-' && negative)) return raw
-  if (!negative && raw.startsWith('-')) return null
-  const amount = toCents(raw)
-  if (amount !== null) return raw
-  if (/^-?\d+[,.]$/.test(raw) && toCents(raw.slice(0, -1)) !== null) return raw
-  // Allow incomplete grouping while editing or entering a Brazilian amount.
-  if (/^-?\d{1,3}(?:\.\d{3})*\.\d{0,2}$/.test(raw) &&
-    raw.replace(/\D/g, '').length <= maxWholeDigits) return raw
-  return null
-}
-
 export function parseDate(value) {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return ''
   const iso = value.split('/').reverse().join('-')
