@@ -183,6 +183,7 @@ details summary { font-weight: 650; font-size: 14px; }
 details p { margin-top: 5px; }
 .chart { height: 285px; min-width: 0; font-size: 12px; }
 .empty-state { padding: 12px 0; }
+.demo-notice { margin: 0 0 20px; padding: 10px 14px; border: 1px solid var(--line); border-left: 3px solid var(--green); border-radius: 8px; color: var(--muted); background: var(--surface); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
 .ledger-stack { display: grid; gap: 14px; }
 .ledger-form, .ledger-form fieldset { display: grid; min-width: 0; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr)); align-items: end; }
 .ledger-form fieldset { grid-column: 1 / -1; border: 0; padding: 0; margin: 0; }

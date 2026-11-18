@@ -1,0 +1,541 @@
+[
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "light",
+    "width": 390
+  },
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "light",
+    "width": 768
+  },
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "dark",
+    "width": 768
+  },
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "light",
+    "width": 1440
+  },
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "dark",
+    "width": 1440
+  },
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "light",
+    "width": 320
+  },
+  {
+    "heading": "Visão geral",
+    "overflow": false,
+    "path": "/",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Contas",
+    "overflow": false,
+    "path": "/contas",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Movimentações",
+    "overflow": false,
+    "path": "/movimentacoes",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Cartões de crédito",
+    "overflow": false,
+    "path": "/cartoes",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Orçamentos",
+    "overflow": false,
+    "path": "/orcamentos",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Metas financeiras",
+    "overflow": false,
+    "path": "/metas",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Patrimônio",
+    "overflow": false,
+    "path": "/patrimonio",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Lembretes",
+    "overflow": false,
+    "path": "/lembretes",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Relatórios",
+    "overflow": false,
+    "path": "/relatorios",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Meu Perfil",
+    "overflow": false,
+    "path": "/perfil",
+    "theme": "dark",
+    "width": 320
+  },
+  {
+    "heading": "Configurações e ajuda",
+    "overflow": false,
+    "path": "/configuracoes",
+    "theme": "dark",
+    "width": 320
+  }
+]

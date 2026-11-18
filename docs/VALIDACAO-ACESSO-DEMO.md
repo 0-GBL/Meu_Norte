@@ -1,5 +1,7 @@
 # Validação da demonstração simplificada
 
+> Registro histórico de uma entrega anterior. Para o funcionamento interativo atual e os testes desta revisão, consulte [REFINAMENTO-FINAL.md](REFINAMENTO-FINAL.md) e [DEMONSTRACAO.md](DEMONSTRACAO.md).
+
 Data: **18/11/2026**. A implementação anterior com segundo banco, seed e runners próprios foi removida. A configuração atual está em [DEMONSTRACAO.md](DEMONSTRACAO.md).
 
 | Verificação | Resultado |

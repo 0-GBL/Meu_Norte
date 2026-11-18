@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import express from 'express'
 import mongoose from 'mongoose'
-import { Account, Asset, Budget, Card, CardEvent, Entry, Goal, GoalEvent, Receipt, Reminder, Valuation, Workspace } from './models.js'
+import * as persistentModels from './models.js'
 import { accountBalances, accountInput, day, entryInput, id, object, RequestError } from './ledger.js'
 import { CARD_PAYMENT, cardInput, cardSummary, eventInput, nextCardDates, today, validateCardEvent } from './cards.js'
 import { budgetInput, budgetSummaries, goalEventInput, goalInput, goalSummary, spendingRecords, validateGoalWithdrawal } from './planning.js'
@@ -43,10 +43,11 @@ function decorateReminder(row, cards, currentDay) {
   }
 }
 
-export function createApp({ origin, secureCookies = false, sendReset, allowInitialLogin = false }) {
-  const connection = mongoose.connection
+export function createApp({ origin, secureCookies = false, sendReset, allowInitialLogin = false,
+  models = persistentModels, connection = mongoose.connection, ledgerAuth }) {
+  const { Account, Asset, Budget, Card, CardEvent, Entry, Goal, GoalEvent, Receipt, Reminder, Valuation, Workspace } = models
   const app = express()
-  const auth = createAuth({ origin, secureCookies, sendReset, allowInitialLogin })
+  const auth = ledgerAuth ?? createAuth({ origin, secureCookies, sendReset, allowInitialLogin })
   app.disable('x-powered-by')
   app.use('/api', (req, res, next) => {
     res.set({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' })
@@ -618,7 +619,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
     }))
   })
 
-  registerAssetReceiptRoutes(app, { createOnce, saveEntry })
+  registerAssetReceiptRoutes(app, { createOnce, saveEntry, models })
 
   app.use('/api', (_req, res) => res.status(404).json({ message: 'Endereço não encontrado.' }))
   app.use((error, _req, res, next) => {

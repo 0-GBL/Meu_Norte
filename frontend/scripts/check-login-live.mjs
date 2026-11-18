@@ -76,9 +76,9 @@ try{
   for(const path of ['/contas','/movimentacoes','/cartoes','/orcamentos','/metas','/patrimonio','/lembretes','/relatorios','/'])await navigate(path)
   await send('Page.reload');await eventually(()=>evaluate('Boolean(document.querySelector(".balance-value"))'))
  })
- await step('demo recusa gravação, alteração de senha, recuperação e IDs fora dos dados fictícios',async()=>{
-  const codes=await evaluate('(async()=>{const post=(path,body)=>fetch("/api"+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(r=>r.status);return Promise.all([post("/ledger/accounts",{name:"Não salvar",kind:"Corrente",initialBalance:0}),post("/auth/password",{currentPassword:"NorteDemo@123",newPassword:"Nunca-salvar-12345"}),post("/auth/forgot",{email:"demo@example.com"})])})()')
-  assert.deepEqual(codes,[403,403,403])
+ await step('demo grava em memória e recusa alteração de senha, recuperação e IDs privados',async()=>{
+  const codes=await evaluate('(async()=>{const post=(path,body)=>fetch("/api"+path,{method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":crypto.randomUUID()},body:JSON.stringify(body)}).then(r=>r.status);return Promise.all([post("/ledger/accounts",{name:"Conta temporária teste",kind:"Corrente",initialBalance:0}),post("/auth/password",{currentPassword:"NorteDemo@123",newPassword:"Nunca-salvar-12345"}),post("/auth/forgot",{email:"demo@example.com"})])})()')
+  assert.deepEqual(codes,[201,403,403])
   assert.equal(await evaluate('(async()=>{const r=await fetch("/api/ledger/reports?from=2026-11-01&through=2026-11-18&account=999999999999999999999999");return r.status})()'),404)
  })
  await step('logout, senha incorreta e nova entrada usam somente o formulário existente',async()=>{
@@ -96,7 +96,7 @@ try{
   if(before!==await privateSnapshot())throw Error('A comparação de integridade privada mudou; é necessário investigar.')
  })
  assert.deepEqual(exceptions,[])
- await writeFile(resolve(project,'docs/LOGIN-REAL-RESULTADO.json'),JSON.stringify({configuration:'backend/.env permanente',backendCommand:'npm --prefix backend run dev',frontendCommand:'npm --prefix frontend run dev',temporaryDatabases:0,demoData:'static JSON',mocked:false,passed:completed,failed:0,refreshValidated:true,restartBothValidated:true,privateDataAndPasswordHashesUnchanged:true,serversStoppedAfterValidation:true},null,2)+'\n')
+ await writeFile(resolve(project,'docs/LOGIN-REAL-RESULTADO.json'),JSON.stringify({configuration:'backend/.env permanente',backendCommand:'npm --prefix backend run dev',frontendCommand:'npm --prefix frontend run dev',temporaryDatabases:0,demoData:'editable per-session memory initialized from fictional JSON',mocked:false,passed:completed,failed:0,refreshValidated:true,restartBothValidated:true,privateDataAndPasswordHashesUnchanged:true,serversStoppedAfterValidation:true},null,2)+'\n')
  console.log('LOGIN_PERMANENTE_APROVADO: '+completed+' cenários, sem banco extra ou configuração substituta.')
 }catch(error){console.error('Validação interrompida: '+(error instanceof assert.AssertionError?error.message:error.name));process.exitCode=1}
 finally{

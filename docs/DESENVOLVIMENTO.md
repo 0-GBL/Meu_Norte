@@ -112,7 +112,7 @@ Validação histórica registrada em **11/11/2026**: **48 testes de backend, 16 
 
 ## Segurança e limitações conhecidas
 
-A demonstração de portfólio é somente de consulta, desativada por padrão. Quando explicitamente habilitada, funciona na mesma API administrativa, com dados JSON estáticos e sessões próprias em memória, sem consultar o MongoDB. Preserve a conexão pessoal e as instruções de administrador existentes; acrescente apenas as variáveis opcionais da demonstração. Consulte [DEMONSTRACAO.md](DEMONSTRACAO.md) e [HOSPEDAGEM.md](HOSPEDAGEM.md).
+A demonstração de portfólio é interativa e desativada por padrão. Quando habilitada, reutiliza as rotas financeiras administrativas com armazenamento temporário isolado por sessão, inicializado pelo JSON fictício. Não consulta nem grava no MongoDB. Escritas concluídas têm cota diária configurável e proteção adicional contra abuso. Preserve a conexão pessoal e as instruções de administrador existentes; acrescente apenas as variáveis opcionais da demonstração. Consulte [DEMONSTRACAO.md](DEMONSTRACAO.md) e [HOSPEDAGEM.md](HOSPEDAGEM.md).
 
 ### Integridade financeira
 

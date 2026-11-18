@@ -19,6 +19,6 @@ As imagens WebP são capturas diretas da aplicação, sem composição ou ediç�
 | patrimonio.webp | Bem ativo avaliado |
 | mobile.webp | Visão geral em 390 px |
 
-As datas das imagens refletem a captura histórica. A demonstração atual usa dados JSON estáticos, sem MongoDB.
+As datas das imagens refletem a captura histórica. A demonstração atual inicializa cópias editáveis por sessão a partir do JSON fictício, exclusivamente em memória e sem MongoDB.
 
 As capturas PNG em `login-validation/` são da validação permanente de 18/11/2026. Para repeti-la, com portas 3001/5173 livres e `.env` configurado, execute `npm --prefix frontend run test:login-live`. O script usa um perfil isolado do Chrome e encerra os servidores que iniciou. Veja [LOGIN-REAL.md](../LOGIN-REAL.md).

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import mongoose from 'mongoose'
-import { Account, Asset, Entry, Reminder, Valuation } from './models.js'
+import * as persistentModels from './models.js'
 import { cents, day, id, label, object, RequestError } from './ledger.js'
 import { today } from './cards.js'
 import { saleKey } from '../../shared/assetReceipts.mjs'
@@ -30,40 +30,42 @@ const audit = (asset, event) => {
   asset.sale.history.push({ ...event, recordedAt: new Date() })
 }
 
-async function closeReminders(owner, assetId, session, action) {
-  const rows = await Reminder.find({ owner, kind: 'assetReceipt', linkId: assetId, status: 'active' }).session(session)
-  for (const row of rows) {
-    row.history.push({ occurrence: row.dueOn, action, recordedAt: new Date() })
-    row.status = action === 'received' ? 'completed' : 'cancelled'
-    await row.save({ session })
-  }
-  return rows.length > 0
-}
+export function registerAssetReceiptRoutes(app, { createOnce, saveEntry, models = persistentModels }) {
+  const { Account, Asset, Entry, Reminder, Valuation } = models
 
-async function scheduleReminder(owner, asset, data, session) {
-  if (!data.remind || !data.expectedOn) return closeReminders(owner, asset._id, session, 'cancel')
-  // This query and all writes run behind the existing workspace transaction lock.
-  const rows = await Reminder.find({ owner, kind: 'assetReceipt', linkId: asset._id, deletedAt: null }).sort({ createdAt: -1 }).session(session)
-  const row = rows.find(item => item.status === 'active') ?? rows[0]
-  const duplicates = rows.filter(item => item !== row && item.status === 'active')
-  for (const duplicate of duplicates) {
-    duplicate.status = 'cancelled'
-    duplicate.history.push({ occurrence: duplicate.dueOn, action: 'cancel', recordedAt: new Date() })
-    await duplicate.save({ session })
+  async function closeReminders(owner, assetId, session, action) {
+    const rows = await Reminder.find({ owner, kind: 'assetReceipt', linkId: assetId, status: 'active' }).session(session)
+    for (const row of rows) {
+      row.history.push({ occurrence: row.dueOn, action, recordedAt: new Date() })
+      row.status = action === 'received' ? 'completed' : 'cancelled'
+      await row.save({ session })
+    }
+    return rows.length > 0
   }
-  if (row?.status === 'active' && row.dueOn === data.expectedOn) return duplicates.length > 0
-  const values = { name: ('Receber venda · ' + asset.name).slice(0, 120), dueOn: data.expectedOn, anchor: Number(data.expectedOn.slice(-2)),
-    amount: asset.sale.amount, frequency: 'once', status: 'active', description: 'Lembrete informativo. Confirme o pagamento no bem vendido.',
-    time: '', leadDays: 0, snoozedUntil: undefined, readOccurrence: undefined }
-  if (row) {
-    row.history.push({ occurrence: row.dueOn, action: row.dueOn === data.expectedOn ? 'activate' : 'reschedule', recordedAt: new Date() })
-    row.set(values)
-    await row.save({ session })
-  } else await Reminder.create([{ ...values, owner, kind: 'assetReceipt', linkId: asset._id }], { session })
-  return true
-}
 
-export function registerAssetReceiptRoutes(app, { createOnce, saveEntry }) {
+  async function scheduleReminder(owner, asset, data, session) {
+    if (!data.remind || !data.expectedOn) return closeReminders(owner, asset._id, session, 'cancel')
+    // This query and all writes run behind the existing workspace transaction lock.
+    const rows = await Reminder.find({ owner, kind: 'assetReceipt', linkId: asset._id, deletedAt: null }).sort({ createdAt: -1 }).session(session)
+    const row = rows.find(item => item.status === 'active') ?? rows[0]
+    const duplicates = rows.filter(item => item !== row && item.status === 'active')
+    for (const duplicate of duplicates) {
+      duplicate.status = 'cancelled'
+      duplicate.history.push({ occurrence: duplicate.dueOn, action: 'cancel', recordedAt: new Date() })
+      await duplicate.save({ session })
+    }
+    if (row?.status === 'active' && row.dueOn === data.expectedOn) return duplicates.length > 0
+    const values = { name: ('Receber venda · ' + asset.name).slice(0, 120), dueOn: data.expectedOn, anchor: Number(data.expectedOn.slice(-2)),
+      amount: asset.sale.amount, frequency: 'once', status: 'active', description: 'Lembrete informativo. Confirme o pagamento no bem vendido.',
+      time: '', leadDays: 0, snoozedUntil: undefined, readOccurrence: undefined }
+    if (row) {
+      row.history.push({ occurrence: row.dueOn, action: row.dueOn === data.expectedOn ? 'activate' : 'reschedule', recordedAt: new Date() })
+      row.set(values)
+      await row.save({ session })
+    } else await Reminder.create([{ ...values, owner, kind: 'assetReceipt', linkId: asset._id }], { session })
+    return true
+  }
+
   app.post('/api/ledger/assets/:id/receipt', async (req, res) => {
     const assetId = id(req.params.id), owner = req.owner
     const data = receiptInput(req.body)

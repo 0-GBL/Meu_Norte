@@ -11,7 +11,7 @@ import { demoConfiguration, DEMO_EMAIL, DEMO_PASSWORD } from './demo.js'
 import { today } from './cards.js'
 
 const uri = process.env.MONGODB_TEST_URI
-test('administrador MongoDB e demo estática mantêm acessos e sessões independentes', { skip: !uri }, async t => {
+test('administrador MongoDB e demo interativa mantêm acessos e sessões independentes', { skip: !uri }, async t => {
   assert.match(uri, /^mongodb:\/\/(127\.0\.0\.1|localhost):/)
   const servers = [], mail = []
   t.after(async () => {
@@ -74,15 +74,15 @@ test('administrador MongoDB e demo estática mantêm acessos e sessões independ
     assert.equal((await request('/ledger/reports' + query + demoAccount._id, { cookie: adminCookie })).status, 404)
     assert.equal((await request('/auth/session?demo=false', { cookie: demoCookie })).data.user.role, 'user')
   })
-  await t.test('admin pode gravar enquanto demo continua somente de consulta', async () => {
+  await t.test('admin e demo gravam em armazenamentos separados', async () => {
     const body = { name: 'Nova conta fictícia', kind: 'Corrente', initialBalance: 100 }
     const [a, d] = await Promise.all([
       request('/ledger/accounts', { cookie: adminCookie, body }), request('/ledger/accounts', { cookie: demoCookie, body }),
     ])
-    assert.equal(a.status, 201); assert.equal(d.status, 403)
+    assert.equal(a.status, 201); assert.equal(d.status, 201)
     assert.equal(await models.Account.countDocuments(), 2)
-    assert.equal((await request('/ledger',{cookie:demoCookie})).data.accounts.length,2)
-    for (const method of ['PUT', 'PATCH', 'DELETE']) assert.equal((await request('/ledger/accounts/' + account._id, { cookie: demoCookie, body: {}, method })).status, 403)
+    assert.equal((await request('/ledger',{cookie:demoCookie})).data.accounts.length,3)
+    assert.equal((await request('/ledger/accounts/' + account._id, { cookie: demoCookie, body: { name: body.name, kind: body.kind, archived: false }, method: 'PUT' })).status, 404)
   })
   await t.test('credenciais demo, recuperação e elevação de papel permanecem bloqueadas', async () => {
     const sessions = await models.Session.countDocuments()

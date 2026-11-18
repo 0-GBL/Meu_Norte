@@ -1,24 +1,26 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { once } from 'node:events'
+import { randomUUID } from 'node:crypto'
 import * as models from './models.js'
 import { createApplication } from './application.js'
 import { demoConfiguration, DEMO_EMAIL, DEMO_PASSWORD } from './demo.js'
-import { demoLedger, demoReport } from './demoData.js'
+import { createDemoStore } from './demoStore.js'
 const env={DEMO_MODE:'true',DEMO_EMAIL,DEMO_PASSWORD}
 
-test('configuração estática exige somente habilitação e credenciais válidas',()=>{
+test('configuração interativa exige somente habilitação e credenciais válidas',()=>{
  assert.equal(demoConfiguration({}).enabled,false)
  assert.equal(demoConfiguration(env).enabled,true)
- for(const fields of [{DEMO_MODE:'yes'},{DEMO_EMAIL:''},{DEMO_EMAIL:'inválido'},{DEMO_PASSWORD:''}])assert.throws(()=>demoConfiguration({...env,...fields}))
+ for(const fields of [{DEMO_DAILY_WRITE_LIMIT:'0'},{DEMO_DAILY_WRITE_LIMIT:'1.5'},{DEMO_DAILY_WRITE_LIMIT:'1001'},{DEMO_MODE:'yes'},{DEMO_EMAIL:''},{DEMO_EMAIL:'inválido'},{DEMO_PASSWORD:''}])assert.throws(()=>demoConfiguration({...env,...fields}))
 })
 test('dados fictícios são independentes, coerentes e reutilizam os cálculos existentes',()=>{
- const a=demoLedger();assert.equal(a.total,1126000);assert.equal(a.goals[0].saved,250000)
- a.accounts[0].name='alterado';assert.equal(demoLedger().accounts[0].name,'Conta corrente')
- const r=demoReport({from:'2026-11-01',through:'2026-11-18'});assert.equal(r.income,520000);assert.equal(r.expenses,260000)
- assert.throws(()=>demoReport({from:'2026-11-01',through:'2026-11-18',account:'999999999999999999999999'}),/Conta não encontrada/)
+ const store=createDemoStore(), a=store.seed('a'), b=store.seed('b')
+ a.accounts[0].name='alterado';assert.equal(b.accounts[0].name,'Conta corrente')
+ assert.notEqual(a.entries[0].owner,b.entries[0].owner)
+ assert.equal(a.valuations.length,2)
+
 })
-test('demo estática autentica e navega sem qualquer operação de banco',async t=>{
+test('demo interativa autentica e navega sem qualquer operação de banco',async t=>{
  const originals=[];let accesses=0
  for(const model of Object.values(models))for(const method of ['find','findOne','findById','countDocuments','create','updateOne','deleteOne','aggregate']){
   originals.push([model,method,model[method]]);model[method]=()=>{accesses++;throw Error('A demo tentou usar o banco pessoal.')}
@@ -27,19 +29,19 @@ test('demo estática autentica e navega sem qualquer operação de banco',async 
  t.after(async()=>{for(const s of servers)await new Promise(r=>s.close(r));for(const [m,k,v]of originals)m[k]=v})
  const origin='http://localhost:5173'
  async function server(enabled=true,secure=false){const http=createApplication({origin,secureCookies:secure,demo:demoConfiguration({...env,DEMO_MODE:String(enabled)})}).listen(0,'127.0.0.1');await once(http,'listening');servers.push(http)
-  return async(path,{body,cookie,method=body?'POST':'GET',source=origin}={})=>{const r=await fetch('http://127.0.0.1:'+http.address().port+'/api'+path,{method,headers:{Origin:source,'Content-Type':'application/json',...(cookie&&{Cookie:cookie})},...(body&&{body:JSON.stringify(body)})});return {status:r.status,cookies:r.headers.getSetCookie(),data:await r.json().catch(()=>null)}}
+  return async(path,{body,cookie,method=body?'POST':'GET',source=origin}={})=>{const r=await fetch('http://127.0.0.1:'+http.address().port+'/api'+path,{method,headers:{'Idempotency-Key':randomUUID(),Origin:source,'Content-Type':'application/json',...(cookie&&{Cookie:cookie})},...(body&&{body:JSON.stringify(body)})});return {status:r.status,cookies:r.headers.getSetCookie(),data:await r.json().catch(()=>null)}}
  }
  const request=await server();let cookie
- await t.test('formulário padrão cria sessão de consulta sem troca de senha',async()=>{
+ await t.test('formulário padrão cria sessão editável sem troca de senha',async()=>{
   const r=await request('/auth/login',{body:{email:DEMO_EMAIL,password:DEMO_PASSWORD}});assert.equal(r.status,200);assert.equal(r.data.user.demo,true);assert.equal(r.data.user.role,'user');assert.equal(r.data.user.mustChangePassword,false)
   assert.match(r.cookies[0],/HttpOnly.*SameSite=Strict/);cookie=r.cookies[0].split(';')[0]
   assert.equal((await request('/auth/session',{cookie})).data.user.email,DEMO_EMAIL)
-  assert.equal((await request('/ledger',{cookie})).data.total,1126000)
+  const ledger=(await request('/ledger',{cookie})).data;assert.equal(ledger.total,1126000);assert.equal(ledger.goals[0].saved,250000)
   const preflight=await request('/ledger',{cookie,method:'OPTIONS'});assert.equal(preflight.status,204)
-  assert.equal((await request('/ledger/reports?from=2026-11-01&through=2026-11-18',{cookie})).status,200)
+  const report=await request('/ledger/reports?from=2026-11-01&through=2026-11-18',{cookie});assert.equal(report.status,200);assert.equal(report.data.income,520000);assert.equal(report.data.expenses,260000)
  })
- await t.test('gravações e credenciais são bloqueadas no servidor',async()=>{
-  for(const method of ['POST','PUT','PATCH','DELETE'])for(const path of ['/ledger/accounts','/ledger/entries','/ledger/assets','/auth/password','/auth/forgot','/auth/reset'])assert.equal((await request(path,{cookie,body:{email:DEMO_EMAIL},method})).status,403)
+ await t.test('credenciais são bloqueadas no servidor e filtros privados são recusados',async()=>{
+  for(const method of ['POST','PUT','PATCH','DELETE'])for(const path of ['/auth/password','/auth/forgot','/auth/reset'])assert.equal((await request(path,{cookie,body:{email:DEMO_EMAIL},method})).status,403)
   assert.equal((await request('/ledger?owner=admin',{cookie})).data.accounts.length,2)
   assert.equal((await request('/ledger/reports?from=2026-11-01&through=2026-11-18&account=999999999999999999999999',{cookie})).status,404)
   assert.equal((await request('/ledger',{cookie,source:'https://hostile.example'})).status,403)

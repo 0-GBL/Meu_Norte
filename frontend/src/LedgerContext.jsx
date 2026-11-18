@@ -129,7 +129,6 @@ export function LedgerProvider({ children }) {
   })
 
   const mutate = (path, method, body) => run(async () => {
-    if (user?.demo) throw new Error('Demonstração somente de consulta. Os dados fictícios não podem ser alterados.')
     const fingerprint = path + ':' + JSON.stringify(body)
     let idempotencyKey
     if (method === 'POST') {

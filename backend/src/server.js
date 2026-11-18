@@ -34,7 +34,7 @@ function mailer() {
 
 async function start() {
   const demo = demoConfiguration(process.env)
-  console.info(demo.enabled ? '[auth] Demonstração de consulta habilitada com dados estáticos, sem MongoDB.' : '[auth] Demonstração desativada.')
+  console.info(demo.enabled ? '[auth] Demonstração interativa habilitada em memória, sem MongoDB.' : '[auth] Demonstração desativada.')
   const production = NODE_ENV === 'production'
   let origin
   try { origin = new URL(CLIENT_ORIGIN) }

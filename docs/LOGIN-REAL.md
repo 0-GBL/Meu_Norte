@@ -1,5 +1,7 @@
 # Login com configuração permanente
 
+> Registro histórico de uma entrega anterior. Para o funcionamento interativo atual e os testes desta revisão, consulte [REFINAMENTO-FINAL.md](REFINAMENTO-FINAL.md) e [DEMONSTRACAO.md](DEMONSTRACAO.md).
+
 Data: **18/11/2026**. Resultado: **6 cenários aprovados**, sem mock, variáveis substitutas ou banco temporário para demonstrar o acesso normal.
 
 A execução utilizou o `backend/.env` real e os comandos habituais `npm run dev` de backend e frontend. O Chrome acessou [localhost:5173/entrar](http://localhost:5173/entrar).

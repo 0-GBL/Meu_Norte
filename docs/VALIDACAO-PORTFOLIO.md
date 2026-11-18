@@ -1,5 +1,7 @@
 # Registro da apresentação de portfólio
 
+> Registro histórico de uma entrega anterior. Para o funcionamento interativo atual e os testes desta revisão, consulte [REFINAMENTO-FINAL.md](REFINAMENTO-FINAL.md) e [DEMONSTRACAO.md](DEMONSTRACAO.md).
+
 A apresentação foi revisada em **17/11/2026**, com README profissional, identidade visual existente, autoria, tecnologias e dez capturas WebP desktop/mobile nos temas claro e escuro. As imagens foram capturadas no Chrome com dados exclusivamente fictícios e banco local de teste, sem informações pessoais.
 
 Naquela revisão passaram 60 testes de backend, 16 de frontend, 15 fluxos administrativos de navegador e a auditoria visual de 96 telas, 48 estados e 2.934 medições de contraste. Esses números são históricos; os resultados atuais estão em [VALIDACAO-ACESSO-DEMO.md](VALIDACAO-ACESSO-DEMO.md).

@@ -53,7 +53,7 @@ export default function App() {
   }, [data?.reminders])
 
   useEffect(() => {
-    document.title = current ? current.label + ' | Meu Norte' : 'Meu Norte'
+    document.title = 'Meu Norte — Direção Financeira'
     const target = hash && document.getElementById(hash.slice(1))
     if (target) target.scrollIntoView()
     else window.scrollTo(0, 0)
@@ -117,7 +117,7 @@ export default function App() {
           </div>
         </header>
         <main id="conteudo" tabIndex={-1} className="content">
-          {user.demo && <p className="panel detail-panel" role="note">Demonstração somente de consulta · Dados fictícios. Não informe dados pessoais. As alterações estão desativadas.</p>}
+          {user.demo && <p className="demo-notice" role="note">Demonstração interativa · Dados fictícios e temporários por sessão. Não informe dados pessoais. Uso sujeito a limites.</p>}
           {pathname === '/perfil' ? <ProfilePage /> : !data ? <section className="panel detail-panel">
             <h1>Seu espaço financeiro</h1>
             {error ? <><p role="alert">{error}</p><button type="button" className="action-button" disabled={busy} onClick={refresh}>Tentar novamente</button></> : <p role="status">Carregando seus registros…</p>}

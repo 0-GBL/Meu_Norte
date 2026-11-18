@@ -7,7 +7,7 @@ import { DEMO_EMAIL } from '../../shared/demoAccess.mjs'
 export function createApplication({ demo = { enabled: false, email: DEMO_EMAIL }, ...options }) {
   const app = express()
   const personal = createApp(options)
-  const readOnly = createDemoRouter({ config: demo, ...options })
+  const demonstration = createDemoRouter({ config: demo, ...options })
   const cookie = sessionCookieName(options.secureCookies, true)
   app.disable('x-powered-by')
   app.use('/api', (req, res, next) => {
@@ -31,7 +31,7 @@ export function createApplication({ demo = { enabled: false, email: DEMO_EMAIL }
     if (['/api/auth/login', '/api/auth/forgot'].includes(req.path) && req.method === 'POST') {
       isDemo = typeof req.body?.email === 'string' && req.body.email.trim().toLowerCase() === demo.email
     }
-    return (isDemo ? readOnly : personal)(req, res, next)
+    return (isDemo ? demonstration : personal)(req, res, next)
   })
   app.use((error, _req, res, _next) => {
     const status = error.type === 'entity.too.large' ? 413 : error.type === 'entity.parse.failed' ? 400 : 500

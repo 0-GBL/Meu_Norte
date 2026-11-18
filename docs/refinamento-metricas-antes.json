@@ -1,0 +1,7 @@
+{
+  "sourceFiles": 69,
+  "sourceBytes": 496852,
+  "sourceLines": 7574,
+  "buildBytes": 876407,
+  "method": "Fontes: HEAD inicial versus arquivos finais, UTF-8 normalizado LF; backend/src, frontend/src, shared e scripts. Build: soma dos arquivos em frontend/dist."
+}

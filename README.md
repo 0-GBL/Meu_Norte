@@ -27,9 +27,9 @@ Desenvolvido como projeto de aprendizado e portfólio profissional, aplica conce
 
 **Acesso administrativo e demonstração na mesma aplicação, quando habilitados no ambiente. Ainda não há implantação online validada.**
 
-A demonstração usa dados fictícios estáticos, sem conexão ao MongoDB. Para habilitá-la, configure apenas `DEMO_MODE=true`, `DEMO_EMAIL=demo@example.com` e `DEMO_PASSWORD=NorteDemo@123` no backend. A configuração local permanente foi validada com os comandos normais de inicialização. [Configuração e validação](docs/CONFIGURACAO-PERMANENTE.md).
+A demonstração usa uma cópia editável dos dados fictícios por sessão, exclusivamente na memória do backend. Para habilitá-la, configure apenas `DEMO_MODE=true`, `DEMO_EMAIL=demo@example.com` e `DEMO_PASSWORD=NorteDemo@123` no backend. A configuração local permanente foi validada com os comandos normais de inicialização. [Configuração e validação](docs/CONFIGURACAO-PERMANENTE.md).
 
-A conta de portfólio permite consultar todos os módulos com dados fictícios, sem cadastro ou configuração de administrador. É **somente de consulta**: alterações financeiras, troca de credenciais e recuperação de senha são bloqueadas pelo servidor, preservando a experiência entre visitantes.
+A conta de portfólio permite **experimentar as funcionalidades financeiras** com as mesmas regras e validações do administrador. As alterações são temporárias e isoladas por sessão. Há um limite padrão de **50 operações concluídas por dia por sessão**, configurável por `DEMO_DAILY_WRITE_LIMIT`, além de controles de frequência, endereço e capacidade contra abuso. Troca de credenciais e recuperação da senha pública permanecem bloqueadas no servidor.
 
 Utilize o formulário de login existente com as credenciais fixas abaixo. Não há troca obrigatória de senha no primeiro acesso. O administrador continua entrando com seu e-mail e senha habituais, na mesma tela:
 
@@ -146,6 +146,7 @@ Configure uma vez o ambiente do backend conforme [Demonstração](docs/DEMONSTRA
 DEMO_MODE=true
 DEMO_EMAIL=demo@example.com
 DEMO_PASSWORD=NorteDemo@123
+DEMO_DAILY_WRITE_LIMIT=50
 ```
 
 Inicie normalmente, em terminais separados:
@@ -155,7 +156,7 @@ npm --prefix backend run dev
 npm --prefix frontend run dev
 ```
 
-Abra [localhost:5173/entrar](http://localhost:5173/entrar). O administrador usa seu acesso habitual; o visitante informa as credenciais públicas no mesmo formulário. Os dados fictícios são carregados de um JSON do backend. Não há segundo banco, criação de usuário demo no MongoDB, servidor adicional ou comando por visitante.
+Abra [localhost:5173/entrar](http://localhost:5173/entrar). O administrador usa seu acesso habitual; o visitante informa as credenciais públicas no mesmo formulário. Cada sessão recebe sua própria cópia editável dos dados fictícios de um JSON do backend. Não há segundo banco, criação de usuário demo no MongoDB, servidor adicional ou comando por visitante.
 
 Uma instalação nova segue as instruções de administrador do [guia de desenvolvimento](docs/DESENVOLVIMENTO.md#como-executar-localmente). Não refaça o cadastro nem altere a senha de uma conta administrativa já existente.
 
@@ -178,13 +179,15 @@ As integrações administrativas utilizam MongoDB temporário local e dados fict
 
 Validação local de **18/11/2026**: **67 testes de backend, 16 de frontend e 6 cenários de login permanente aprovados**, além do build de produção. A validação administrativa no navegador cobriu **15 fluxos integrados**. A auditoria visual anterior permanece documentada, sem homologar uma implantação pública.
 
-Resultados do acesso combinado e limites: [Validação do acesso de demonstração](docs/VALIDACAO-ACESSO-DEMO.md). A entrega visual anterior está no [Relatório de portfólio](docs/VALIDACAO-PORTFOLIO.md). As evidências anteriores continuam em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md).
+Refinamento interativo e validação atual: [Relatório final](docs/REFINAMENTO-FINAL.md).
+
+Resultados históricos do acesso combinado e limites: [Validação do acesso de demonstração](docs/VALIDACAO-ACESSO-DEMO.md). A entrega visual anterior está no [Relatório de portfólio](docs/VALIDACAO-PORTFOLIO.md). As evidências anteriores continuam em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md).
 
 ## Segurança e limitações
 
 - Senhas protegidas por hash; sessões com validade, cookies HttpOnly/SameSite Strict e Secure em HTTPS.
 - Verificação de origem e isolamento dos registros por espaço financeiro no backend.
-- Demonstração desativada por padrão, com dados estáticos e somente de consulta. Sessão demo em memória por uma hora: sobrevive ao refresh; após reiniciar a API ou expirar, basta entrar novamente. Sessões administrativas continuam no MongoDB.
+- Demonstração desativada por padrão, com dados fictícios editáveis e isolados por sessão. Sessão demo em memória por uma hora: sobrevive ao refresh; após reiniciar a API ou expirar, basta entrar novamente. Sessões administrativas continuam no MongoDB. Dados e contadores demo são temporários e podem reiniciar com o serviço; o controle diário em memória não é uma garantia persistente.
 - Sem integração bancária automática ou geração automática de receitas/despesas recorrentes. Recebimentos patrimoniais são integrais; recorrência é restrita a lembretes.
 - Não há implantação pública homologada. HTTPS/proxy/cookies, SMTP, backups, volume e dispositivos físicos ainda exigem validação no ambiente hospedado.
 

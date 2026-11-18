@@ -21,9 +21,10 @@ const pages = {
 }
 
 function Preferences({ theme, toggleTheme }) {
+  const { user } = useLedger()
   return <div className="progress-grid">
     <section className="panel detail-panel"><h2>Aparência</h2><p>Escolha o tema para este navegador.</p><button type="button" className="action-button" onClick={toggleTheme}>{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}{theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}</button></section>
-    <section className="panel detail-panel"><h2>Primeiros passos</h2><details><summary>Por onde começo?</summary><p>Explore Contas para entender o saldo total. Depois, consulte Movimentações para acompanhar receitas, despesas e transferências.</p></details><details><summary>Como funcionam os lembretes?</summary><p>A seção Lembretes reúne os próximos compromissos, como vencimentos e revisões de patrimônio.</p></details><details><summary>Quais dados são guardados?</summary><p>O navegador guarda a preferência de tema. Quando os registros estão conectados, as contas e movimentações cadastradas ficam no banco de dados.</p></details></section>
+    <section className="panel detail-panel"><h2>Primeiros passos</h2><details><summary>Por onde começo?</summary><p>Explore Contas para entender o saldo total. Depois, consulte Movimentações para acompanhar receitas, despesas e transferências.</p></details><details><summary>Como funcionam os lembretes?</summary><p>A seção Lembretes reúne os próximos compromissos, como vencimentos e revisões de patrimônio.</p></details><details><summary>Quais dados são guardados?</summary><p>O navegador guarda a preferência de tema. {user?.demo ? 'Na demonstração, as alterações ficam temporariamente na memória do servidor e são descartadas ao sair, expirar a sessão ou reiniciar o serviço.' : 'As contas e movimentações cadastradas ficam no banco de dados.'}</p></details></section>
   </div>
 }
 
