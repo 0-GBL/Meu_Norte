@@ -1,0 +1,14 @@
+{
+  "configuration": "backend/.env permanente",
+  "backendCommand": "npm --prefix backend run dev",
+  "frontendCommand": "npm --prefix frontend run dev",
+  "temporaryDatabases": 0,
+  "demoData": "static JSON",
+  "mocked": false,
+  "passed": 6,
+  "failed": 0,
+  "refreshValidated": true,
+  "restartBothValidated": true,
+  "privateDataAndPasswordHashesUnchanged": true,
+  "serversStoppedAfterValidation": true
+}

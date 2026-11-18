@@ -1,28 +1,96 @@
-# Meu Norte — Direção Financeira
+<div align="center">
+  <img src="docs/images/logo.svg" width="80" height="80" alt="Bússola do Meu Norte" />
+  <h1>Meu Norte</h1>
+  <p><strong>Direção Financeira</strong></p>
+  <p>Organize suas finanças. Planeje seu futuro.</p>
+  <p>Gestão financeira pessoal em uma aplicação web Full Stack.</p>
+  <p>
+    <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-102b3f?style=flat&amp;logo=javascript&amp;logoColor=F7DF1E" />
+    <img alt="React" src="https://img.shields.io/badge/React-102b3f?style=flat&amp;logo=react&amp;logoColor=61DAFB" />
+    <img alt="Vite" src="https://img.shields.io/badge/Vite-102b3f?style=flat&amp;logo=vite&amp;logoColor=C4B5FD" />
+    <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-102b3f?style=flat&amp;logo=tailwindcss&amp;logoColor=38BDF8" />
+    <img alt="Node.js" src="https://img.shields.io/badge/Node.js-102b3f?style=flat&amp;logo=nodedotjs&amp;logoColor=86D5AC" />
+    <img alt="Express" src="https://img.shields.io/badge/Express-102b3f?style=flat&amp;logo=express&amp;logoColor=white" />
+    <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-102b3f?style=flat&amp;logo=mongodb&amp;logoColor=86D5AC" />
+  </p>
+  <p>Por <a href="https://github.com/0-GBL">Gabriel Araujo</a> · Desenvolvedor Full Stack em formação.</p>
+  <p><a href="#demonstração">Demonstração</a> · <a href="#capturas-de-tela">Interface</a> · <a href="#instalação-e-execução-local">Execução</a> · <a href="#sobre-o-desenvolvedor">Contato</a></p>
+</div>
 
-Aplicação web de gestão financeira pessoal desenvolvida como projeto de aprendizado e portfólio Full Stack.
+## Sobre o projeto
 
-## Visão geral e objetivo
+O Meu Norte reúne contas, movimentações, cartões, orçamentos, metas e patrimônio para ajudar pessoas a organizar suas finanças em uma interface clara e intuitiva.
 
-O Meu Norte reúne receitas, despesas, contas, cartões, metas e patrimônio para ajudar pessoas a organizar suas finanças em um só lugar. O projeto procura tornar a consulta de saldos, o registro de movimentações e o acompanhamento de planos mais simples e compreensíveis.
+Desenvolvido como projeto de aprendizado e portfólio profissional, aplica conceitos de frontend e backend, autenticação, persistência de dados, integridade financeira e experiência do usuário. Campos opcionais e recursos avançados aparecem sob demanda, preservando a simplicidade das operações comuns.
 
-A interface prioriza clareza, acessibilidade e experiência do usuário: navegação por áreas relacionadas, campos opcionais em informações adicionais e recursos avançados disponíveis quando necessários. O visual utiliza azul-marinho e verde-menta, com temas claro e escuro e adaptação a computador e celular.
+## Demonstração
 
-O desenvolvimento principal está concluído. Os cenários validados e os limites de uso estão registrados em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md).
+**Acesso administrativo e demonstração na mesma aplicação, quando habilitados no ambiente. Ainda não há implantação online validada.**
+
+A demonstração usa dados fictícios estáticos, sem conexão ao MongoDB. Para habilitá-la, configure apenas `DEMO_MODE=true`, `DEMO_EMAIL=demo@example.com` e `DEMO_PASSWORD=NorteDemo@123` no backend. A configuração local permanente foi validada com os comandos normais de inicialização. [Configuração e validação](docs/CONFIGURACAO-PERMANENTE.md).
+
+A conta de portfólio permite consultar todos os módulos com dados fictícios, sem cadastro ou configuração de administrador. É **somente de consulta**: alterações financeiras, troca de credenciais e recuperação de senha são bloqueadas pelo servidor, preservando a experiência entre visitantes.
+
+Utilize o formulário de login existente com as credenciais fixas abaixo. Não há troca obrigatória de senha no primeiro acesso. O administrador continua entrando com seu e-mail e senha habituais, na mesma tela:
+
+| Acesso público exclusivo da demonstração | Valor |
+| --- | --- |
+| E-mail | `demo@example.com` |
+| Senha | `NorteDemo@123` |
+
+Essas credenciais foram implementadas e validadas localmente. Não pertencem ao administrador. A mesma API valida a sessão demo e fornece somente o conjunto fictício, sem consultar o banco pessoal. **Não utilize a demonstração para guardar informações pessoais.**
+
+[Como funciona o isolamento e quais são os limites](docs/DEMONSTRACAO.md).
+
+## Capturas de tela
+
+Interface real, capturada em Chrome com banco temporário e dados exclusivamente fictícios. O dashboard abaixo acompanha o tema do GitHub.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/tema-escuro.webp" />
+  <img src="docs/images/dashboard.webp" alt="Dashboard do Meu Norte com saldo total, atalhos dos módulos, meta de reserva e próximos compromissos fictícios" width="1440" />
+</picture>
+
+<details>
+<summary>Explorar movimentações, contas, cartões, planejamento, relatórios e versão mobile</summary>
+
+### Movimentações
+
+![Receitas, despesas e transferência fictícias, com filtros e histórico](docs/images/movimentacoes.webp)
+
+### Contas e cartões
+
+![Conta corrente e reserva, com saldos calculados pelas movimentações fictícias](docs/images/contas.webp)
+
+![Cartão fictício, limite disponível e acesso às faturas](docs/images/cartoes.webp)
+
+### Planejamento financeiro
+
+![Meta de reserva de emergência com progresso e planejamento mensal](docs/images/planejamento.webp)
+
+![Orçamento de alimentação com valor realizado e limite mensal](docs/images/orcamentos.webp)
+
+### Relatórios e patrimônio
+
+![Relatórios com comparação mensal, receitas, despesas, caixa e posição patrimonial separados](docs/images/relatorios.webp)
+
+![Patrimônio com bem ativo avaliado e acesso ao gerenciamento](docs/images/patrimonio.webp)
+
+### No celular
+
+<img src="docs/images/mobile.webp" width="390" alt="Visão geral do Meu Norte em uma tela de celular de 390 pixels, com menu recolhido e cartões adaptados" />
+
+</details>
 
 ## Principais funcionalidades
 
-- Login administrativo, sessão persistente, troca de senha e recuperação por e-mail quando SMTP está configurado.
-- Contas com saldos, transferências, arquivamento e exclusão protegida.
-- Receitas/despesas e histórico unificado com busca, filtros, referências, edição e cancelamento.
-- Cartões com compras parceladas, faturas, pagamentos parciais, estornos, encargos e crédito.
-- Orçamentos mensais e metas, com registros informativos ou transferências entre contas.
-- Bens, avaliações, compra/venda/baixa e recebimentos patrimoniais integrais, com previsão e histórico.
-- Lembretes recorrentes e notificações internas, com confirmação manual por ocorrência.
-- Relatórios 2.0 com resumo financeiro, gráficos, comparação de períodos e distinção entre receitas/despesas, caixa e posição patrimonial.
-- Interface responsiva, temas claro e escuro, formulários curtos e navegação por teclado.
-
-Não há integração bancária automática, geração automática de receitas/despesas recorrentes ou um modo de demonstração embutido. Os dados fictícios pertencem somente aos testes isolados.
+- **Contas e movimentações:** saldos, receitas, despesas, transferências, filtros e histórico.
+- **Cartões:** compras parceladas, faturas, pagamentos parciais, estornos e encargos.
+- **Planejamento:** orçamentos por mês e categoria, metas e acompanhamento do progresso.
+- **Patrimônio:** bens, atualização de valores, vendas, recebimentos e retiradas com histórico.
+- **Lembretes:** compromissos recorrentes e notificações internas com confirmação manual.
+- **Relatórios:** resumo financeiro, gráficos e comparação entre períodos, distinguindo despesas, caixa e patrimônio.
+- **Acesso e interface:** login por e-mail e senha, sessão persistente, temas claro/escuro e layout responsivo.
 
 ## Tecnologias utilizadas
 
@@ -31,154 +99,102 @@ Não há integração bancária automática, geração automática de receitas/d
 | Frontend | JavaScript, React 19, React Router 7, Vite 7 e Tailwind CSS 4 |
 | Gráficos e ícones | Recharts e Lucide React |
 | Backend | Node.js, Express 5, Mongoose 9, bcryptjs, Nodemailer e dotenv |
-| Banco de dados | MongoDB com replica set, local ou MongoDB Atlas |
-| Testes | `node:test`, `mongodb-memory-server` e Chrome headless via Chrome DevTools Protocol |
+| Dados | MongoDB com replica set e transações |
+| Testes | `node:test`, `mongodb-memory-server` e Chrome headless via DevTools Protocol |
 
-## Estrutura do projeto
+## Arquitetura do sistema
 
 ```text
-backend/
-  src/          API, autenticação, modelos, regras financeiras e testes
-  scripts/      runner de integração com MongoDB local temporário
-frontend/
-  src/          páginas, componentes, contexto de sessão/dados e estilos
-  scripts/      testes de navegador, integração e contraste
-shared/         validações e regras de datas compartilhadas
-VALIDACAO_FINAL.md
+Usuário → React + Vite → API REST (Node.js + Express) → MongoDB (Mongoose)
+                              ↕
+                     Sessões e validações
 ```
 
-As rotas `/api/ledger` usam o espaço financeiro definido pela sessão autenticada. Operações relacionadas executam em transações MongoDB; a revisão do espaço serializa gravações concorrentes. Criações recebem chave de idempotência para evitar repetição do mesmo envio.
+A API identifica o espaço financeiro pela sessão, valida os dados no backend e protege operações relacionadas com transações MongoDB. Chaves de idempotência evitam repetir envios financeiros; cancelamentos preservam referências e histórico. As regras compartilhadas ficam em `shared/`.
 
-## Como executar localmente
+<details>
+<summary>Estrutura do repositório</summary>
 
-### Requisitos
+```text
+backend/src/       API, autenticação, modelos, regras e testes
+backend/scripts/   testes isolados e diagnóstico de configuração
+frontend/src/      páginas, componentes e contexto de sessão/dados
+frontend/scripts/  testes de navegador e geração de capturas reais
+shared/            validações e regras de datas compartilhadas
+docs/              execução, demonstração, hospedagem e imagens
+VALIDACAO_FINAL.md evidências históricas preservadas
+```
 
-- Node.js **22.12+** e npm; as validações finais foram executadas com Node.js 24.
-- MongoDB com **replica set e suporte a transações**: Atlas privado ou instalação local equivalente. Uma instância standalone não atende aos fluxos transacionais.
-- Chrome para os testes de navegador. Defina `CHROME_PATH` se o executável não estiver no caminho esperado pelo script.
-- As suítes isoladas baixam um binário MongoDB caso ele ainda não esteja em cache. Não precisam de acesso ao Atlas.
+</details>
 
-### Instalar dependências
+## Instalação e execução local
 
-Execute a partir da raiz do repositório. No PowerShell, use `npm.cmd` se a política de execução bloquear `npm.ps1`.
+Requer **Node.js 22.12+**, npm e Chrome para os testes de navegador. No PowerShell, use `npm.cmd` se a política bloquear `npm.ps1`.
+
+### Uma API para os dois acessos
+
+Instale as dependências na raiz:
 
 ```powershell
 npm --prefix backend ci
 npm --prefix frontend ci
-
-# Crie apenas se o arquivo ainda não existir. Nunca substitua um .env real.
-if (!(Test-Path backend/.env)) {
-  Copy-Item backend/.env.example backend/.env
-}
 ```
 
-### Executar
+Configure uma vez o ambiente do backend conforme [Demonstração](docs/DEMONSTRACAO.md). Preserve `MONGODB_URI` e todas as configurações administrativas existentes. A demonstração fica desativada por padrão em novas instalações; para habilitá-la, acrescente:
 
-Após preencher as variáveis descritas na próxima seção, abra dois terminais na raiz:
+```ini
+DEMO_MODE=true
+DEMO_EMAIL=demo@example.com
+DEMO_PASSWORD=NorteDemo@123
+```
+
+Inicie normalmente, em terminais separados:
 
 ```powershell
-# Terminal 1
 npm --prefix backend run dev
-
-# Terminal 2
-npm --prefix frontend run dev -- --strictPort
+npm --prefix frontend run dev
 ```
 
-Abra [http://localhost:5173/entrar](http://localhost:5173/entrar). A API local escuta em `127.0.0.1:3001`. A origem aberta no navegador deve corresponder a `CLIENT_ORIGIN`; mudar entre `localhost`, `127.0.0.1` ou outra porta exige configuração consistente.
+Abra [localhost:5173/entrar](http://localhost:5173/entrar). O administrador usa seu acesso habitual; o visitante informa as credenciais públicas no mesmo formulário. Os dados fictícios são carregados de um JSON do backend. Não há segundo banco, criação de usuário demo no MongoDB, servidor adicional ou comando por visitante.
 
-## Variáveis de ambiente
+Uma instalação nova segue as instruções de administrador do [guia de desenvolvimento](docs/DESENVOLVIMENTO.md#como-executar-localmente). Não refaça o cadastro nem altere a senha de uma conta administrativa já existente.
 
-Preencha `backend/.env` apenas no seu computador, com os dados do seu banco privado. Os exemplos versionados não contêm credenciais.
+Na hospedagem, o mesmo serviço Render executa `npm --prefix backend start` e mantém os dois acessos após a configuração inicial. Frontend, proxy HTTPS e banco administrativo no Atlas estão descritos em [Hospedagem](docs/HOSPEDAGEM.md). Nenhum deploy foi executado.
 
-| Variável | Uso |
-| --- | --- |
-| `MONGODB_URI` | Conexão privada do banco com replica set; obrigatória |
-| `CLIENT_ORIGIN` | Origem exata do frontend; padrão local `http://localhost:5173` |
-| `PORT` | Porta da API; padrão `3001` |
-| `INITIAL_ADMIN_NAME`, `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` | Configuração inicial do administrador, somente no ambiente local de desenvolvimento |
-| `INITIAL_ADMIN_LEGACY_OWNER` | Opcional, somente para associar um administrador inicial a um espaço anterior já existente |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Recuperação por e-mail; opcional e com TLS |
-| `NODE_ENV` | Configuração do ambiente; não use `production` para a criação local inicial do administrador |
 
-O frontend usa o proxy `/api` do Vite. `VITE_LEDGER_API_URL` pode definir a origem pública da API, quando necessário; o código acrescenta `/api` aos caminhos. O padrão é `/`, sem necessidade de configurar o frontend para a execução local. Nunca coloque senhas, tokens ou segredos em variáveis `VITE_*`: elas são destinadas ao código público do navegador. `frontend/.env.local` é local e ignorado pelo Git.
 
-### Administrador inicial
-
-1. Em uma instalação local nova, preencha nome, e-mail e uma senha inicial exclusiva nas variáveis `INITIAL_ADMIN_*`. Prefira uma senha forte com pelo menos 12 caracteres, respeitando o limite de 72 bytes.
-2. Inicie a API e entre com esses dados. Em **Minha conta**, abra **Alterar senha** e troque a senha para liberar os módulos financeiros.
-3. Remova as variáveis iniciais do seu ambiente após a troca. A criação é idempotente: reiniciar a API não redefine a senha de uma conta já existente.
-
-Se houver um espaço legado, configure `INITIAL_ADMIN_LEGACY_OWNER` **antes da primeira criação** e somente com o identificador conhecido desse espaço. Sem essa opção, o administrador recebe um espaço independente. Não use essa configuração para tentar substituir um administrador existente.
-
-Esta documentação não redefine credenciais existentes. A recuperação de senha requer SMTP configurado; os testes usam um simulador e não enviam mensagens externas.
-
-## Testes e build
+## Testes e qualidade
 
 ```powershell
 npm --prefix backend run test:isolated
 npm --prefix frontend test
 npm --prefix frontend run build
-npm --prefix frontend run test:reports-browser
 npm --prefix frontend run test:app-browser
+npm --prefix frontend run test:reports-browser
+npm --prefix frontend run test:login-live
 ```
 
-- `test:isolated`: executa todos os testes de backend em replica set local temporário. Não carrega `.env` nem reaproveita a URI do Atlas.
-- `frontend test`: testes unitários de valores, datas, apresentação e lembretes.
-- `test:reports-browser`: fixtures locais para patrimônio, relatórios, erros, estados vazios e auditoria de controles nos dois temas.
-- `test:app-browser`: login real e fluxos pelo navegador contra a API Express e um MongoDB temporário local, com dados exclusivos do teste.
-- `build`: gera `frontend/dist`, que permanece ignorado pelo Git.
+As integrações administrativas utilizam MongoDB temporário local e dados fictícios. `test:login-live` valida a configuração permanente: inicia e encerra os dois servidores normais, usa Chrome e confere, por leitura, a integridade dos registros pessoais. Exige as portas 3001/5173 livres e o `.env` local configurado. Não substitui variáveis ou cria bancos. Não direcione testes de escrita ao Atlas pessoal. As imagens anteriores são preservadas; veja [docs/images](docs/images/README.md).
 
-As suítes de integração recusam URIs remotas. `npm --prefix backend test` sem `MONGODB_TEST_URI` executa os testes unitários e ignora as integrações; prefira o runner isolado para validar a versão completa. Não configure `MONGODB_TEST_URI` com uma conexão do Atlas.
+Validação local de **18/11/2026**: **67 testes de backend, 16 de frontend e 6 cenários de login permanente aprovados**, além do build de produção. A validação administrativa no navegador cobriu **15 fluxos integrados**. A auditoria visual anterior permanece documentada, sem homologar uma implantação pública.
 
-Última validação registrada em **11/11/2026**: **48 testes de backend, 16 de frontend e 15 fluxos de ponta a ponta aprovados**, sem reprovações ou testes ignorados. A auditoria percorreu **96 telas, 48 estados representativos e 2.934 medições de texto/ícones**, em 320, 390, 900 e 1440 px. O build foi concluído. Evidências e limites estão em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md).
+Resultados do acesso combinado e limites: [Validação do acesso de demonstração](docs/VALIDACAO-ACESSO-DEMO.md). A entrega visual anterior está no [Relatório de portfólio](docs/VALIDACAO-PORTFOLIO.md). As evidências anteriores continuam em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md).
 
-## Segurança e limitações conhecidas
+## Segurança e limitações
 
-### Integridade financeira
+- Senhas protegidas por hash; sessões com validade, cookies HttpOnly/SameSite Strict e Secure em HTTPS.
+- Verificação de origem e isolamento dos registros por espaço financeiro no backend.
+- Demonstração desativada por padrão, com dados estáticos e somente de consulta. Sessão demo em memória por uma hora: sobrevive ao refresh; após reiniciar a API ou expirar, basta entrar novamente. Sessões administrativas continuam no MongoDB.
+- Sem integração bancária automática ou geração automática de receitas/despesas recorrentes. Recebimentos patrimoniais são integrais; recorrência é restrita a lembretes.
+- Não há implantação pública homologada. HTTPS/proxy/cookies, SMTP, backups, volume e dispositivos físicos ainda exigem validação no ambiente hospedado.
 
-- Valores usam centavos inteiros; transferências próprias não são receitas ou despesas.
-- Compras de cartão entram por competência da fatura. Pagamentos alteram o caixa sem repetir a despesa. Parcelas preservam os centavos; pagamentos duplicados são protegidos.
-- Contas com saldo ou dependências não podem ser excluídas. Exclusões lógicas e cancelamentos preservam referências e histórico.
-- Avaliações e vendas patrimoniais informativas não movimentam contas. Recebimentos confirmados entram uma única vez no caixa, separados das receitas comuns nos Relatórios 2.0.
-- O preço e o custo original de uma venda ficam bloqueados. Correções exigem cancelamento controlado e novo registro; recebimentos ativos precisam de tratamento financeiro explícito antes do cancelamento da venda.
-- Bens vendidos ou baixados ficam fora do patrimônio ativo, preservando avaliações e operações anteriores.
-- Salvar uma previsão inalterada não cria reagendamento nem reabre notificações. Mudanças apenas no lembrete têm registro próprio.
-- Comparações mensais usam os mesmos dias do mês anterior, com ajuste para meses curtos; meses completos comparam meses completos. O intervalo consecutivo continua disponível. As datas são tratadas sem deslocamentos de fuso.
-
-### Autenticação e proteção dos dados
-
-Sessões usam tokens aleatórios armazenados com hash, validade de sete dias e cookies HttpOnly/SameSite Strict, com Secure em HTTPS. A API verifica origem, propriedade dos registros, validade da sessão, entradas e limites de tentativas. Logs de falha não imprimem credenciais ou corpos das requisições.
-
-Mantenha arquivos `.env`, senhas, tokens e conexões privadas fora do repositório. Os arquivos `.env.example` contêm apenas nomes de variáveis e configurações locais sem segredos. As verificações de segurança e dependências registradas na validação final refletem a data em que foram executadas; não substituem revisão humana, auditoria externa ou acompanhamento de novos avisos.
-
-### Limitações conhecidas
-
-Limitações desta versão: recebimentos patrimoniais integrais; recorrência restrita a lembretes com confirmação manual; limitação de login por processo; ausência de importação/conciliação bancária; posição histórica dependente do saldo inicial cadastrado e sem versões históricas de vínculos com contas.
-
-Antes de uma disponibilização pública, ainda é necessário homologar HTTPS/proxy/cookies, SMTP, backups/restauração, volume de dados, outros navegadores, dispositivos físicos e tecnologias assistivas. O Chrome automatizado e os testes de contraste realizados não equivalem a homologação de produção ou certificação completa de acessibilidade.
-
-### Cuidados antes de publicar o código
-
-Revise as alterações e os arquivos novos antes de incluí-los em um commit. Estes comandos permitem conferir o conteúdo local e o que já está preparado no índice:
-
-```powershell
-git status --short
-git diff --check
-git diff
-git diff --cached --stat
-git diff --cached --name-only
-git diff --cached
-```
-
-Inclua somente código, testes e documentação conhecidos. Não publique arquivos `.env` reais, chaves privadas, credenciais, dados pessoais, exports de dados, dumps, logs, `node_modules` ou `dist`. Não use `git add -f` para contornar o `.gitignore`. Se um segredo tiver sido exposto, revogue-o ou substitua-o no serviço correspondente; removê-lo do arquivo atual não elimina a exposição anterior.
+As regras financeiras e limitações detalhadas estão no [guia técnico](docs/DESENVOLVIMENTO.md#segurança-e-limitações-conhecidas). Nunca publique arquivos `.env`, credenciais privadas ou dados pessoais; as credenciais públicas de demonstração são a única exceção intencional.
 
 ## Sobre o desenvolvedor
 
-Sou Gabriel Araujo, Desenvolvedor Full Stack em formação. Tenho foco no ecossistema JavaScript e interesse no desenvolvimento de aplicações web modernas, funcionais e intuitivas.
+Sou **Gabriel Araujo**, Desenvolvedor Full Stack em formação, com foco no ecossistema JavaScript e interesse na construção de aplicações web modernas, funcionais e intuitivas.
 
-O Meu Norte faz parte do meu portfólio de projetos e representa a aplicação prática dos meus estudos em desenvolvimento frontend, backend, integração com banco de dados e organização de sistemas web.
-
-**Contato:**
+O Meu Norte representa a aplicação prática dos meus estudos em desenvolvimento frontend, backend, banco de dados e arquitetura de sistemas web.
 
 - GitHub: [0-GBL](https://github.com/0-GBL)
 - LinkedIn: [Gabriel Araujo](https://www.linkedin.com/in/gabriel-araujo-5929a72ba/)

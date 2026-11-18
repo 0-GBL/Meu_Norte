@@ -83,6 +83,8 @@ const user = new Schema({
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
   ledgerOwner: String,
   mustChangePassword: { type: Boolean, default: false },
+  // Legacy demo documents stay blocked by private auth; the static demo never uses this model.
+  demo: { type: Boolean, default: false },
 }, options)
 user.index({ role: 1 }, { unique: true, partialFilterExpression: { role: 'admin' } })
 user.index({ ledgerOwner: 1 }, { unique: true, partialFilterExpression: { ledgerOwner: { $type: 'string' } } })

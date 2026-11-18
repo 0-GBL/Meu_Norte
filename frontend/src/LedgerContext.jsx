@@ -106,6 +106,8 @@ export function LedgerProvider({ children }) {
     if (action === 'forgot') return result.message
     if (action === 'reset' || action === 'logout') {
       clearSession()
+      const session = await request('/auth/session')
+      setAuth({ ready: true, recovery: session.recovery })
       return true
     }
     if (action === 'login') clearSession()
@@ -127,6 +129,7 @@ export function LedgerProvider({ children }) {
   })
 
   const mutate = (path, method, body) => run(async () => {
+    if (user?.demo) throw new Error('Demonstração somente de consulta. Os dados fictícios não podem ser alterados.')
     const fingerprint = path + ':' + JSON.stringify(body)
     let idempotencyKey
     if (method === 'POST') {

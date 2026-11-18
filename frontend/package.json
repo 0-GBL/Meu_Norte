@@ -2,7 +2,15 @@
   "name": "meu-norte-frontend",
   "private": true,
   "type": "module",
-  "scripts": {"dev":"vite","build":"vite build","preview":"vite preview","test":"node --test","test:reports-browser":"node scripts/check-reports.mjs","test:app-browser":"node scripts/check-app.mjs"},
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test",
+    "test:reports-browser": "node scripts/check-reports.mjs",
+    "test:app-browser": "node scripts/check-app.mjs",
+    "test:login-live": "node scripts/check-login-live.mjs"
+  },
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

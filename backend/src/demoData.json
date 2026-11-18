@@ -1,0 +1,192 @@
+{
+  "referenceDate": "2026-11-18",
+  "accounts": [
+    {
+      "_id": "000000000000000000000101",
+      "name": "Conta corrente",
+      "kind": "Corrente",
+      "initialBalance": 120000
+    },
+    {
+      "_id": "000000000000000000000102",
+      "name": "Reserva",
+      "kind": "Poupança",
+      "initialBalance": 450000
+    }
+  ],
+  "entries": [
+    {
+      "_id": "000000000000000000000201",
+      "type": "income",
+      "description": "Salário",
+      "amount": 520000,
+      "category": "Salário",
+      "date": "2026-10-01",
+      "accountId": "000000000000000000000101"
+    },
+    {
+      "_id": "000000000000000000000202",
+      "type": "expense",
+      "description": "Moradia",
+      "amount": 150000,
+      "category": "Moradia",
+      "date": "2026-10-01",
+      "accountId": "000000000000000000000101",
+      "expenseKind": "variable"
+    },
+    {
+      "_id": "000000000000000000000203",
+      "type": "expense",
+      "description": "Mercado",
+      "amount": 68000,
+      "category": "Alimentação",
+      "date": "2026-10-01",
+      "accountId": "000000000000000000000101",
+      "expenseKind": "variable"
+    },
+    {
+      "_id": "000000000000000000000204",
+      "type": "expense",
+      "description": "Transporte",
+      "amount": 24000,
+      "category": "Transporte",
+      "date": "2026-10-01",
+      "accountId": "000000000000000000000101",
+      "expenseKind": "variable"
+    },
+    {
+      "_id": "000000000000000000000205",
+      "type": "income",
+      "description": "Salário",
+      "amount": 520000,
+      "category": "Salário",
+      "date": "2026-11-01",
+      "accountId": "000000000000000000000101"
+    },
+    {
+      "_id": "000000000000000000000206",
+      "type": "expense",
+      "description": "Moradia",
+      "amount": 150000,
+      "category": "Moradia",
+      "date": "2026-11-01",
+      "accountId": "000000000000000000000101",
+      "expenseKind": "variable"
+    },
+    {
+      "_id": "000000000000000000000207",
+      "type": "expense",
+      "description": "Mercado",
+      "amount": 68000,
+      "category": "Alimentação",
+      "date": "2026-11-01",
+      "accountId": "000000000000000000000101",
+      "expenseKind": "variable"
+    },
+    {
+      "_id": "000000000000000000000208",
+      "type": "expense",
+      "description": "Transporte",
+      "amount": 24000,
+      "category": "Transporte",
+      "date": "2026-11-01",
+      "accountId": "000000000000000000000101",
+      "expenseKind": "variable"
+    },
+    {
+      "_id": "000000000000000000000209",
+      "type": "transfer",
+      "description": "Guardar na reserva",
+      "amount": 50000,
+      "date": "2026-11-01",
+      "accountId": "000000000000000000000101",
+      "destinationId": "000000000000000000000102"
+    }
+  ],
+  "cards": [
+    {
+      "_id": "000000000000000000000301",
+      "name": "Cartão principal",
+      "institution": "Instituição fictícia",
+      "limit": 400000,
+      "close": 25,
+      "due": 5
+    }
+  ],
+  "cardEvents": [
+    {
+      "_id": "000000000000000000000302",
+      "cardId": "000000000000000000000301",
+      "type": "purchase",
+      "description": "Material de estudo",
+      "amount": 18000,
+      "date": "2026-11-01",
+      "category": "Educação",
+      "installments": 1
+    }
+  ],
+  "budgets": [
+    {
+      "_id": "000000000000000000000401",
+      "month": "2026-11",
+      "category": "Alimentação",
+      "categoryKey": "alimentação",
+      "limit": 100000
+    }
+  ],
+  "goals": [
+    {
+      "_id": "000000000000000000000501",
+      "name": "Reserva de emergência",
+      "target": 1200000,
+      "monthly": 50000,
+      "status": "active"
+    }
+  ],
+  "goalEvents": [
+    {
+      "_id": "000000000000000000000502",
+      "goalId": "000000000000000000000501",
+      "amount": 250000,
+      "date": "2026-11-01"
+    }
+  ],
+  "assets": [
+    {
+      "_id": "000000000000000000000601",
+      "name": "Veículo",
+      "kind": "vehicle",
+      "acquired": 4000000,
+      "acquiredOn": "2026-10-01",
+      "valuations": [
+        {
+          "_id": "000000000000000000000602",
+          "date": "2026-11-18",
+          "value": 3750000
+        },
+        {
+          "_id": "000000000000000000000603",
+          "date": "2026-10-01",
+          "value": 3800000
+        }
+      ]
+    }
+  ],
+  "reminders": [
+    {
+      "_id": "000000000000000000000701",
+      "name": "Revisar orçamento",
+      "dueOn": "2026-11-25",
+      "frequency": "monthly",
+      "kind": "manual",
+      "time": "09:00",
+      "leadDays": 0,
+      "status": "active",
+      "effectiveDate": "2026-11-25",
+      "notifyOn": "2026-11-25",
+      "read": false,
+      "relevant": false,
+      "history": []
+    }
+  ]
+}

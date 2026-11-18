@@ -117,6 +117,7 @@ export default function App() {
           </div>
         </header>
         <main id="conteudo" tabIndex={-1} className="content">
+          {user.demo && <p className="panel detail-panel" role="note">Demonstração somente de consulta · Dados fictícios. Não informe dados pessoais. As alterações estão desativadas.</p>}
           {pathname === '/perfil' ? <ProfilePage /> : !data ? <section className="panel detail-panel">
             <h1>Seu espaço financeiro</h1>
             {error ? <><p role="alert">{error}</p><button type="button" className="action-button" disabled={busy} onClick={refresh}>Tentar novamente</button></> : <p role="status">Carregando seus registros…</p>}

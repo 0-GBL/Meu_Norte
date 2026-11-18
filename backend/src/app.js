@@ -44,6 +44,7 @@ function decorateReminder(row, cards, currentDay) {
 }
 
 export function createApp({ origin, secureCookies = false, sendReset, allowInitialLogin = false }) {
+  const connection = mongoose.connection
   const app = express()
   const auth = createAuth({ origin, secureCookies, sendReset, allowInitialLogin })
   app.disable('x-powered-by')
@@ -62,7 +63,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
     next()
   })
 
-  app.get('/api/health', (_req, res) => res.sendStatus(mongoose.connection.readyState === 1 ? 204 : 503))
+  app.get('/api/health', (_req, res) => res.sendStatus(connection.readyState === 1 ? 204 : 503))
   app.use('/api/auth', auth.router)
   app.use('/api/ledger', async (req, res, next) => {
     const user = await auth.getUser(req)
@@ -112,7 +113,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
 
   // Serialize changes to the same workspace, including account archival and entry edits.
   async function write(ownerId, operation) {
-    return mongoose.connection.transaction(async session => {
+    return connection.transaction(async session => {
       await Workspace.updateOne({ _id: ownerId }, { $inc: { revision: 1 } }, { session })
       const result = await operation(session)
       return { ...await snapshot(ownerId, session), ...(result?.mutation && { mutation: result.mutation }) }
@@ -161,7 +162,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
     await Entry.updateOne(filter, { $set: data, $unset: unset, $push: { revisions: { before, at: new Date() } } }, { session })
   }
 
-  app.get('/api/ledger', async (req, res) => res.json(await mongoose.connection.transaction(
+  app.get('/api/ledger', async (req, res) => res.json(await connection.transaction(
     session => snapshot(req.owner, session), { readConcern: { level: 'snapshot' } },
   )))
   app.get('/api/ledger/reports', async (req, res) => {
@@ -187,7 +188,7 @@ export function createApp({ origin, secureCookies = false, sendReset, allowIniti
     if (assetKind && !['vehicle', 'property', 'equipment', 'investment', 'other'].includes(assetKind)) {
       throw new RequestError(400, 'Escolha uma categoria patrimonial válida.')
     }
-    res.json(await mongoose.connection.transaction(async session => {
+    res.json(await connection.transaction(async session => {
       const currentDay = today()
       const date = through < currentDay ? through : currentDay
       const accounts = await Account.find({ owner }).select('initialBalance').session(session).lean()

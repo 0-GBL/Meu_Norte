@@ -47,7 +47,7 @@ export function requireOrigin(req, origin) {
   if (req.get('origin') !== origin) throw new RequestError(403, 'Origem não autorizada.')
 }
 
-function limiter() {
+export function limiter() {
   const buckets = new Map()
   const interval = 15 * 60 * 1000
   let sweep = 0
@@ -67,13 +67,17 @@ function limiter() {
   }
 }
 
+export const sessionCookieName = (secure, demo = false) => (secure ? '__Host-' : '') + 'meunorte' + (demo ? '-demo' : '')
+
 export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin = false }) {
   const router = express.Router()
   const limit = limiter()
-  const cookieName = secureCookies ? '__Host-meunorte' : 'meunorte'
+  const cookieName = sessionCookieName(secureCookies)
+  const otherCookie = sessionCookieName(secureCookies, true)
   const cookieOptions = { httpOnly: true, secure: secureCookies, sameSite: 'strict', path: '/' }
   const visibleUser = user => ({
     name: user.name, email: user.email, role: user.role ?? 'user', mustChangePassword: Boolean(user.mustChangePassword),
+    ...(user.demo && { demo: true }),
   })
   const rawCookie = req => req.get('cookie')?.split(';').map(value => value.trim())
     .find(value => value.startsWith(cookieName + '='))?.slice(cookieName.length + 1)
@@ -88,19 +92,22 @@ export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin
     const session = await Session.findOne({ _id: key, expiresAt: { $gt: new Date() } }).lean()
     if (!session) return null
     return User.findOne({ _id: session.owner, sessionVersion: session.version,
+      demo: { $ne: true },
       ...(!allowInitialLogin && { mustChangePassword: { $ne: true } }),
-    }).select('name email role ledgerOwner mustChangePassword sessionVersion').lean()
+    }).select('name email role ledgerOwner mustChangePassword sessionVersion demo').lean()
   }
 
   async function issue(req, res, user) {
+    const lifetime = sessionLifetime
     const raw = token()
     await Session.create({
       _id: hashToken(raw), owner: user._id, version: user.sessionVersion,
-      expiresAt: new Date(Date.now() + sessionLifetime),
+      expiresAt: new Date(Date.now() + lifetime),
     })
     const previous = cookieId(req)
     if (previous) await Session.deleteOne({ _id: previous })
-    res.cookie(cookieName, raw, { ...cookieOptions, maxAge: sessionLifetime })
+    res.cookie(cookieName, raw, { ...cookieOptions, maxAge: lifetime })
+    res.clearCookie(otherCookie, cookieOptions)
     res.json({ user: visibleUser(user) })
   }
 
@@ -127,7 +134,7 @@ export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin
     limit('login:' + hashToken(email), 8)
     const user = await User.findOne({ email }).lean()
     const matches = await checkPassword(password, user?.passwordHash)
-    if (!user || !matches || (user.mustChangePassword && !allowInitialLogin)) throw invalid
+    if (!user || !matches || user.demo || (user.mustChangePassword && !allowInitialLogin)) throw invalid
     await issue(req, res, user)
   })
 
@@ -154,6 +161,7 @@ export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin
   router.post('/logout', async (req, res) => {
     const key = cookieId(req)
     if (key) await Session.deleteOne({ _id: key })
+    res.clearCookie(otherCookie, cookieOptions)
     res.clearCookie(cookieName, cookieOptions).json({ user: null })
   })
 
@@ -164,7 +172,7 @@ export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin
     limit('reset:' + hashToken(email), 4)
     const user = await User.findOne({ email }).lean()
     res.json({ message: 'Se houver uma conta com esse e-mail, você receberá um link de recuperação.' })
-    if (!user || user.mustChangePassword) return
+    if (!user || user.mustChangePassword || user.demo) return
     try {
       const raw = token()
       await ResetToken.create({
@@ -189,7 +197,7 @@ export function createAuth({ origin, secureCookies, sendReset, allowInitialLogin
     await mongoose.connection.transaction(async session => {
       const reset = await ResetToken.findOneAndDelete(filter).session(session)
       if (!reset || reset.expiresAt <= new Date()) throw new RequestError(400, 'O link de recuperação é inválido ou expirou.')
-      const result = await User.updateOne({ _id: reset.owner, sessionVersion: reset.version, mustChangePassword: { $ne: true } },
+      const result = await User.updateOne({ _id: reset.owner, sessionVersion: reset.version, mustChangePassword: { $ne: true }, demo: { $ne: true } },
         { $set: { passwordHash }, $inc: { sessionVersion: 1 } }, { session })
       if (!result.modifiedCount) throw new RequestError(400, 'O link de recuperação é inválido ou expirou.')
     })

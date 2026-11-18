@@ -1,10 +1,11 @@
 import 'dotenv/config'
 import mongoose from 'mongoose'
 import nodemailer from 'nodemailer'
-import { createApp } from './app.js'
+import { createApplication } from './application.js'
 import { bootstrapAdmin } from './bootstrapAdmin.js'
 import { RequestError } from './ledger.js'
 import * as models from './models.js'
+import { demoConfiguration } from './demo.js'
 
 const {
   MONGODB_URI, CLIENT_ORIGIN = 'http://localhost:5173',
@@ -32,6 +33,8 @@ function mailer() {
 }
 
 async function start() {
+  const demo = demoConfiguration(process.env)
+  console.info(demo.enabled ? '[auth] Demonstração de consulta habilitada com dados estáticos, sem MongoDB.' : '[auth] Demonstração desativada.')
   const production = NODE_ENV === 'production'
   let origin
   try { origin = new URL(CLIENT_ORIGIN) }
@@ -50,10 +53,10 @@ async function start() {
   await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
   await Promise.all(Object.values(models).map(model => model.init()))
   if (allowInitialLogin) await bootstrapAdmin(initialAdmin)
-  const app = createApp({
-    origin: CLIENT_ORIGIN, secureCookies: origin.protocol === 'https:', sendReset, allowInitialLogin,
+  const app = createApplication({
+    origin: CLIENT_ORIGIN, secureCookies: origin.protocol === 'https:', sendReset, allowInitialLogin, demo,
   })
-  app.listen(Number(PORT), '127.0.0.1', error => {
+  app.listen(Number(PORT), production ? '0.0.0.0' : '127.0.0.1', error => {
     if (error) {
       console.error('Não foi possível abrir a porta da API:', error.code)
       process.exit(1)

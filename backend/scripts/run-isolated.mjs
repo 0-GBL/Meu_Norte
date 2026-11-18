@@ -8,7 +8,7 @@ const mongo = await MongoMemoryReplSet.create({
   replSet: { count: 1, storageEngine: 'wiredTiger', ip: '127.0.0.1' },
 })
 try {
-  const child = spawn(process.execPath, ['--test'], { stdio: 'inherit', windowsHide: true,
+  const child = spawn(process.execPath, ['--test', ...process.argv.slice(2)], { stdio: 'inherit', windowsHide: true,
     env: { ...process.env, MONGODB_URI: '', MONGODB_TEST_URI: mongo.getUri() } })
   process.exitCode = await new Promise((resolve, reject) => {
     child.once('error', reject)

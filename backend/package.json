@@ -6,7 +6,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --test",
-    "test:isolated": "node scripts/run-isolated.mjs"
+    "test:isolated": "node scripts/run-isolated.mjs",
+    "check:auth": "node scripts/check-auth-config.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

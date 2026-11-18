@@ -124,7 +124,8 @@ try {
     await navigate('/contas'); await click('Contas arquivadas'); await evaluate(`document.getElementById('${a._id}').querySelector('button').click()`); await opened(); await click('Mais opções e detalhes', 'dialog'); await click('Reativar conta', 'dialog'); await closed()
   })
   await step('cartão e compra preservam categoria e parcelamento', async () => {
-    await navigate('/cartoes'); await click('Adicionar cartão'); await opened(); await fill('dialog input[name=name]', 'Cartão teste'); await fill('dialog input[name=limit]', '500'); await fill('dialog input[name=close]', '15'); await fill('dialog input[name=due]', '22'); await click('Salvar cartão', 'dialog'); await closed()
+    // Keep today's fixture purchases in the current billing month on every day of the month.
+    await navigate('/cartoes'); await click('Adicionar cartão'); await opened(); await fill('dialog input[name=name]', 'Cartão teste'); await fill('dialog input[name=limit]', '500'); await fill('dialog input[name=close]', '31'); await fill('dialog input[name=due]', '5'); await click('Salvar cartão', 'dialog'); await closed()
     card = await models.Card.findOne({ owner, name: 'Cartão teste' })
     await click('Registrar compra'); await opened(); await fill('dialog input[name=description]', 'Compra teste'); await fill('dialog input[name=amount]', '120'); await click('Registrar compra', 'dialog'); await closed()
     const purchase = await models.CardEvent.findOne({ owner, type: 'purchase' }); assert.equal(purchase.installments, 1); assert.equal(purchase.category, 'Geral')

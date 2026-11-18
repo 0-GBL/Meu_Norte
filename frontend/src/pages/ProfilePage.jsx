@@ -29,7 +29,7 @@ export default function ProfilePage() {
       <h2>{user.name}</h2>
       <p>{user.email}</p>
     </section>
-    <details className="panel detail-panel" open={user.mustChangePassword || undefined}>
+    {!user.demo && <details className="panel detail-panel" open={user.mustChangePassword || undefined}>
       <summary>Alterar senha</summary>
       {user.mustChangePassword && <p>Troque a senha inicial para acessar o espaço financeiro.</p>}
       <p>Use pelo menos 12 caracteres e até 72 bytes.</p>
@@ -43,6 +43,6 @@ export default function ProfilePage() {
       </form>
       {(validation || error) && <p role="alert">{validation || error}</p>}
       {message && <p role="status">{message}</p>}
-    </details>
+    </details>}
   </div>
 }
